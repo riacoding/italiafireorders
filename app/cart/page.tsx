@@ -1,98 +1,115 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { ChevronLeft, Trash2 } from "lucide-react"
+import { useState } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ChevronLeft, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '@/components/ui/card'
+import { useCart } from '@/components/CartContext'
+import CurrencyDisplay from '@/components/CurrencyDisplay'
+import { useToast } from '@/hooks/use-toast'
 
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Card, CardContent } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
+const locationId = 'L49ESK4NHETS7'
 
 export default function CartPage() {
   const { toast } = useToast()
-  // In a real app, this would be fetched from a cart state or API
-  const [cartItems, setCartItems] = useState<any[]>([])
+  const { items: cartItems, removeItem, clearCart } = useCart()
+  console.log('items', cartItems)
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
+    return cartItems.reduce((total, item) => total + item.basePrice * item.quantity, 0)
   }
 
-  const removeItem = (index: number) => {
-    setCartItems((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const placeOrder = () => {
+  const placeOrder = async () => {
     if (cartItems.length === 0) {
       toast({
-        title: "Cart is empty",
-        description: "Please add items to your cart before placing an order.",
-        variant: "destructive",
+        title: 'Cart is empty',
+        description: 'Please add items to your cart before placing an order.',
+        variant: 'destructive',
       })
       return
     }
 
-    // In a real app, this would make an API call to process the order
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cartItems, locationId }),
+    })
+
+    const data = await res.json()
+    console.log('checkout link url', data)
+    if (data.url) {
+      window.location.href = data.url
+    } else {
+      // Handle error
+      console.error('Failed to create checkout link')
+    }
+
     toast({
-      title: "Order placed!",
-      description: "Your order has been placed successfully.",
+      title: 'Order placed!',
+      description: 'Your order has been placed successfully.',
     })
 
     // Clear cart after order is placed
-    setCartItems([])
+    clearCart()
   }
 
   return (
-    <div className="container max-w-md mx-auto pb-20">
-      <header className="sticky top-0 bg-white z-10 border-b">
-        <div className="flex items-center p-4">
-          <Link href="/" className="mr-4">
-            <ChevronLeft className="h-6 w-6" />
+    <div className='container max-w-md mx-auto pb-20'>
+      <header className='sticky top-0 bg-white z-10 border-b'>
+        <div className='flex items-center p-4'>
+          <Link href='/menu/op1' className='mr-4'>
+            <ChevronLeft className='h-6 w-6' />
           </Link>
-          <h1 className="text-xl font-bold">Your Order</h1>
+          <h1 className='text-xl font-bold'>Your Order</h1>
         </div>
       </header>
 
-      <main className="p-4">
+      <main className='p-4'>
         {cartItems.length === 0 ? (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-            <p className="text-muted-foreground mb-6">Add some delicious pizzas to get started!</p>
-            <Link href="/">
+          <div className='text-center py-12'>
+            <h2 className='text-xl font-semibold mb-2'>Your cart is empty</h2>
+            <p className='text-muted-foreground mb-6'>Add some delicious pizzas to get started!</p>
+            <Link href='/menu/op1'>
               <Button>Browse Menu</Button>
             </Link>
           </div>
         ) : (
           <>
-            <div className="space-y-4 mb-6">
+            <div className='space-y-4 mb-6'>
               {cartItems.map((item, index) => (
-                <Card key={index} className="overflow-hidden">
-                  <CardContent className="p-3">
-                    <div className="flex items-start">
-                      <div className="w-16 h-16 relative mr-3">
+                <Card key={index} className='overflow-hidden'>
+                  <CardContent className='p-3'>
+                    <div className='flex items-start'>
+                      <div className='w-16 h-16 relative mr-3'>
                         <Image
-                          src={item.image || "/placeholder.svg"}
+                          src={item.image || '/placeholder.svg'}
                           alt={item.name}
                           fill
-                          className="object-cover rounded"
+                          className='object-cover rounded'
                         />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <h3 className="font-medium">{item.name}</h3>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(index)}>
-                            <Trash2 className="h-4 w-4" />
+                      <div className='flex-1'>
+                        <div className='flex justify-between'>
+                          <h3 className='font-medium'>{item.name}</h3>
+                          <Button variant='ghost' size='icon' className='h-8 w-8' onClick={() => removeItem(item.id)}>
+                            <Trash2 className='h-4 w-4' />
                           </Button>
                         </div>
-                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                        <div className="flex justify-between items-center mt-1">
-                          <div className="text-sm">
-                            {item.customizations && item.customizations.length > 0 && (
-                              <div className="text-xs text-muted-foreground">{item.customizations.join(", ")}</div>
+                        <p className='text-sm text-muted-foreground'>Qty: {item.quantity}</p>
+                        <div className='flex justify-between items-center mt-1'>
+                          <div className='text-sm'>
+                            {item.toppings && item.toppings.length > 0 && (
+                              <div className='text-xs text-muted-foreground'>
+                                {item.toppings.map((topping) => topping.name).join(', ')}
+                              </div>
                             )}
                           </div>
-                          <p className="font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className='font-bold'>
+                            <CurrencyDisplay value={item.basePrice * item.quantity} />
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -101,33 +118,37 @@ export default function CartPage() {
               ))}
             </div>
 
-            <Separator className="my-6" />
+            <Separator className='my-6' />
 
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between">
+            <div className='space-y-2 mb-6'>
+              <div className='flex justify-between'>
                 <span>Subtotal</span>
-                <span>${calculateTotal().toFixed(2)}</span>
+                <span>
+                  {' '}
+                  <CurrencyDisplay value={calculateTotal()} />
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span>Delivery Fee</span>
-                <span>$3.99</span>
-              </div>
-              <div className="flex justify-between">
+
+              <div className='flex justify-between'>
                 <span>Tax</span>
-                <span>${(calculateTotal() * 0.08).toFixed(2)}</span>
+                <span>
+                  <CurrencyDisplay value={calculateTotal() * 0.08} />
+                </span>
               </div>
-              <Separator className="my-2" />
-              <div className="flex justify-between font-bold text-lg">
+              <Separator className='my-2' />
+              <div className='flex justify-between font-bold text-lg'>
                 <span>Total</span>
-                <span>${(calculateTotal() + 3.99 + calculateTotal() * 0.08).toFixed(2)}</span>
+                <span>
+                  <CurrencyDisplay value={calculateTotal() + calculateTotal() * 0.08} />
+                </span>
               </div>
             </div>
           </>
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
-        <Button className="w-full" size="lg" onClick={placeOrder} disabled={cartItems.length === 0}>
+      <div className='fixed bottom-0 left-0 right-0 p-4 bg-white border-t'>
+        <Button className='w-full' size='lg' onClick={placeOrder} disabled={cartItems.length === 0}>
           Place Order
         </Button>
       </div>

@@ -27,16 +27,26 @@
  */
 
 'use server'
-import { cookieBasedClient } from '@/util/amplify'
+import { cookieBasedClient, getCurrentUserServer } from '@/util/amplify'
 import { Schema } from '@/amplify/data/resource'
 import { Menu, SquareItem, SquareModifierList, SquareCatalogObject } from '@/types'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_ACCESS_TOKEN!
 
+const isAuth = async () => {
+  const auth = await getCurrentUserServer()
+
+  if (auth.user) {
+    return true
+  }
+  return false
+}
+
 export const fetchMenus = async () => {
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
   try {
-    const { data, errors } = await cookieBasedClient.models.Menu.list({ authMode: 'userPool' })
+    const { data, errors } = await cookieBasedClient.models.Menu.list({ authMode })
 
     if (errors && errors.length > 0) {
       console.error('Error fetching menus:', errors)
@@ -51,7 +61,8 @@ export const fetchMenus = async () => {
 }
 
 export const fetchMenuById = async (id: string) => {
-  const { data, errors } = await cookieBasedClient.models.Menu.get({ id }, { authMode: 'userPool' })
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  const { data, errors } = await cookieBasedClient.models.Menu.get({ id }, { authMode })
   if (errors && errors.length > 0) {
     console.error('Error fetching menu:', errors)
     throw new Error(errors.map((e) => e.message).join(', '))
@@ -59,11 +70,29 @@ export const fetchMenuById = async (id: string) => {
   return data
 }
 
+export const fetchCurrentMenus = async () => {
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  try {
+    const { data, errors } = await cookieBasedClient.models.Menu.list({
+      filter: { isActive: { eq: true } },
+      authMode,
+    })
+    if (errors && errors.length > 0) {
+      console.error('Error fetching menus:', errors)
+      throw new Error(errors.map((e) => e.message).join(', '))
+    }
+    return data
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 export const getCurrentMenu = async (locationId: string): Promise<Menu | null> => {
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
   console.log('locationId', locationId)
   const { data, errors } = await cookieBasedClient.models.Menu.list({
     filter: { locationId: { eq: locationId }, isActive: { eq: true } },
-    authMode: 'userPool',
+    authMode,
   })
   if (errors && errors.length > 0) {
     console.error('Error fetching menu:', errors)
@@ -128,7 +157,6 @@ export async function getSquareItems(ids: string[]): Promise<SquareItem[]> {
 }
 
 export async function saveMenu(input: Partial<Schema['Menu']['type']> & { id?: string }) {
-  console.log('ssr save menu', input)
   if (input.id) {
     // Update existing
     const { data, errors } = await cookieBasedClient.models.Menu.update(input as any, { authMode: 'userPool' })
@@ -151,6 +179,27 @@ export async function saveMenu(input: Partial<Schema['Menu']['type']> & { id?: s
 type ItemWithModifiers = {
   item: SquareItem
   modifierLists: SquareModifierList[]
+}
+
+export async function getAllSquareCatalogItems(): Promise<SquareCatalogObject[]> {
+  try {
+    const res = await fetch(`${SQUARE_BASE_URL}/catalog/list`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${SQUARE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    })
+
+    const json = await res.json()
+    const objects: SquareCatalogObject[] = json.objects || []
+
+    return objects.filter((obj) => obj.type === 'ITEM')
+  } catch (err) {
+    console.log(err)
+    return []
+  }
 }
 
 export async function getSquareItemsWithModifiers(ids: string[]): Promise<ItemWithModifiers[]> {

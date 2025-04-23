@@ -9,9 +9,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <Authenticator>
       {({ signOut, user }) => (
         <div className='w-full flex flex-col items-center'>
-          <p>Welcome, {user?.username}</p>
-          <Button onClick={signOut}>Sign Out</Button>
           {children}
+          <Button onClick={signOut}>Sign Out</Button>
         </div>
       )}
     </Authenticator>

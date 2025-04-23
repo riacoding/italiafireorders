@@ -9,29 +9,18 @@ import type { SquareItem } from '@/types'
 import { Menu } from '@/types'
 import { useMenu } from '@/app/menu/[loc]/MenuProvider'
 import CurrencyDisplay from './CurrencyDisplay'
+import { useCart } from '@/components/CartContext'
 
 export default function MenuDisplay({ menu }: { menu: Menu }) {
   const { items } = useMenu()
+  const { items: cartItems, getTotalItems } = useCart()
   return (
     <div className='container max-w-md mx-auto pb-20'>
-      <header className='sticky top-0 bg-white z-10 border-b'>
-        <div className='flex justify-between items-center p-4'>
-          <h1 className='text-xl font-bold uppercase'>ItaliaFire.com</h1>
-          <Link href='/cart' className='relative'>
-            <span className='sr-only'>Cart</span>
-            <CartIcon />
-            <span className='absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center'>
-              0
-            </span>
-          </Link>
-        </div>
-      </header>
-
       <main className='p-4'>
         <h2 className='text-3xl text-center font-bold mb-5'>{menu.name}</h2>
 
         <h3 className='text-2xl font-light mb-4'>Our Menu</h3>
-        <div className='space-y-4'>
+        <div className='flex flex-col gap-2'>
           {items.map((item) => (
             <Link key={item.id} href={`/menu/${menu.locationId}/item/${item.id}`}>
               <Card className='overflow-hidden'>

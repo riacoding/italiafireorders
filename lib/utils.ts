@@ -13,21 +13,6 @@ export function normalizeSquareItem({
   item: SquareItem
   modifierLists: SquareModifierList[]
 }): NormalizedItem {
-  console.log('group:', JSON.stringify(modifierLists[0], null, 2))
-  console.log('MODIFIER LIST DEBUG:')
-  modifierLists.forEach((group, i) => {
-    console.log(`Group ${i}:`, group.modifier_list_data?.name)
-    console.log(`Group ${i}:`, group.id)
-    const mods = group.modifier_list_data?.modifiers
-    if (!mods) {
-      console.log('⚠️ No modifiers array')
-    } else {
-      console.log(`→ Found ${mods.length} modifiers`)
-      mods.forEach((mod, j) => {
-        console.log(`   - Mod ${j}:`, mod?.modifier_data?.name)
-      })
-    }
-  })
   return {
     id: item.id,
     name: item.item_data.name,

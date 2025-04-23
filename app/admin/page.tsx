@@ -1,17 +1,20 @@
-import React from 'react'
+'use client'
+
+import React, { useEffect, useState } from 'react'
 import { fetchMenus } from '@/lib/ssr-actions'
 import { Menu } from '@/types'
 import AdminPage from './AdminPage'
 
-type Props = {}
+export default function Admin() {
+  const [menus, setMenus] = useState<Menu[] | null>(null)
 
-// const fetchMenus = async()=> {
-//     const menus = await client.models.Menu.list({
-//         filter: { locationId: { eq: "truck-west" }, isActive: { eq: true } }
-//       })
-// }
+  useEffect(() => {
+    fetchMenus().then(setMenus)
+  }, [])
 
-export default async function admin({}: Props) {
-  const menus: Menu[] = await fetchMenus()
+  if (!menus || menus.length === 0) {
+    return <div>Loading...</div>
+  }
+
   return <AdminPage menus={menus} />
 }

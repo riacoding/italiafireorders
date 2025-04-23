@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useCart } from '@/components/CartContext'
 import { Button } from '@/components/ui/button'
 import { Minus, Plus } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 
 type Topping = {
   id: string
@@ -22,8 +25,8 @@ type Item = {
 }
 
 export default function ItemDetail({ item }: { item: Item }) {
-  console.log('itemDetail:', item)
   const { addItem } = useCart()
+  const router = useRouter()
   const [quantity, setQuantity] = useState(1)
   const [selectedToppings, setSelectedToppings] = useState<Record<string, boolean>>({})
 
@@ -52,17 +55,28 @@ export default function ItemDetail({ item }: { item: Item }) {
 
   const handleAddToCart = () => {
     const selected = item.toppings.filter((t) => selectedToppings[t.id])
-    addItem({
+    const cartItem = {
       id: item.id,
       name: item.name,
       basePrice: item.price,
       quantity,
       toppings: selected,
-    })
+    }
+    console.log('adding item to cart:', cartItem)
+    addItem(cartItem)
+    router.push('/cart')
   }
 
   return (
     <div className='p-4 max-w-md mx-auto space-y-4'>
+      <header className='sticky top-0 bg-white z-10'>
+        <div className='flex items-center p-4'>
+          <Link href='/menu/op1' className='mr-4'>
+            <ChevronLeft className='h-6 w-6' />
+          </Link>
+          <h1 className='text-xl font-bold'>Add To Order</h1>
+        </div>
+      </header>
       <h1 className='text-2xl font-bold'>{item.name}</h1>
       <p className='text-muted-foreground'>{item.description}</p>
       <p className='font-semibold text-lg'>${(item.price / 100).toFixed(2)}</p>

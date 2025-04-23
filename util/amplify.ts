@@ -17,7 +17,7 @@ export const { runWithAmplifyServerContext } = createServerRunner({
 // This page always dynamically renders per request
 export const dynamic = 'force-dynamic'
 
-export default async function AuthGetCurrentUserServer() {
+export const getCurrentUserServer = async () => {
   try {
     const currentUser = await runWithAmplifyServerContext({
       nextServerContext: { cookies },
@@ -26,7 +26,7 @@ export default async function AuthGetCurrentUserServer() {
 
     return { user: currentUser }
   } catch (error) {
-    console.log(error)
+    //console.log(error)
     return { user: null }
   }
 }

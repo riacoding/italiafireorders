@@ -1,6 +1,13 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend'
 
 const schema = a.schema({
+  TicketCounter: a
+    .model({
+      id: a.id().required(),
+      counter: a.integer().default(0),
+      expiresAt: a.integer(), // TTL field, manually configured
+    })
+    .authorization((allow) => [allow.guest().to(['read']), allow.authenticated().to(['read'])]),
   Menu: a
     .model({
       id: a.id().required(),

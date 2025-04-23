@@ -1,5 +1,5 @@
 import { fetchMenuWithItems } from '@/lib/fetchMenuWithItems'
-import { MenuProvider, type NormalizedItem } from './MenuProvider'
+import { MenuProvider } from './MenuProvider'
 
 type Params = Promise<{ loc: string }>
 
