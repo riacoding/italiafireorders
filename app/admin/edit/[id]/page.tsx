@@ -20,6 +20,7 @@ type FormValues = {
 }
 
 export default function EditMenuPage() {
+  console.log('REACT_APP_TEST_VARIABLE', process.env.REACT_APP_TEST_VARIABLE)
   const [squareItems, setSquareItems] = useState<SquareCatalogObject[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
