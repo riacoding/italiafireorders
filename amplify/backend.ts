@@ -1,6 +1,7 @@
 import { defineBackend } from '@aws-amplify/backend'
 import { auth } from './auth/resource'
 import { data } from './data/resource'
+import { storage } from './storage/resource'
 import { config } from '@dotenvx/dotenvx'
 import { UserPool } from 'aws-cdk-lib/aws-cognito'
 
@@ -12,6 +13,7 @@ config({ path: '.env.local', override: false })
 const backend = defineBackend({
   auth,
   data,
+  storage,
 })
 
 const userPool = backend.auth.resources.userPool as UserPool
