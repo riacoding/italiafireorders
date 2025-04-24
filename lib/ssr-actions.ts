@@ -195,7 +195,11 @@ export async function getAllSquareCatalogItems(): Promise<SquareCatalogObject[]>
     const json = await res.json()
     const objects: SquareCatalogObject[] = json.objects || []
 
-    console.log('fetch getAllSquareCatalogItems', SQUARE_TOKEN.substring(0, 5), JSON.stringify(objects, null, 2))
+    console.log(
+      'fetch getAllSquareCatalogItems',
+      typeof SQUARE_TOKEN === 'string' ? SQUARE_TOKEN.substring(0, 5) : '(no token)',
+      JSON.stringify(objects, null, 2)
+    )
     return objects.filter((obj) => obj.type === 'ITEM')
   } catch (err) {
     console.log(err)
