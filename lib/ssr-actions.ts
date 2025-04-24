@@ -192,6 +192,8 @@ export async function getAllSquareCatalogItems(): Promise<SquareCatalogObject[]>
       cache: 'no-store',
     })
 
+    console.log('fetch getAllSqauareCatalogItems', JSON.stringify(res, null, 2))
+
     const json = await res.json()
     const objects: SquareCatalogObject[] = json.objects || []
 
