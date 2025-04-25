@@ -42,6 +42,7 @@ export default function CartPage() {
     console.log('checkout link url', data)
     if (data.url) {
       window.location.href = data.url
+      return
     } else {
       // Handle error
       console.error('Failed to create checkout link')
