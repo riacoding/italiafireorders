@@ -5,7 +5,7 @@ import { storage } from './storage/resource'
 import { config } from '@dotenvx/dotenvx'
 import { UserPool } from 'aws-cdk-lib/aws-cognito'
 
-config({ path: '.env.local', override: false })
+config({ path: '.env.production', override: false })
 
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
