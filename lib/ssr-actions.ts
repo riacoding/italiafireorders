@@ -30,7 +30,22 @@
 import { secret } from '@aws-amplify/backend'
 import { cookieBasedClient, getCurrentUserServer } from '@/util/amplify'
 import { Schema } from '@/amplify/data/resource'
-import { Menu, SquareItem, SquareModifierList, SquareCatalogObject } from '@/types'
+import {
+  Menu,
+  SquareItem,
+  SquareModifierList,
+  SquareCatalogObject,
+  menuSelectionSet,
+  HydratedCatalog,
+  MenuInput,
+  CatalogItem,
+  CreateMenuItemInput,
+  menuItemSelectionSet,
+  catalogItemSelectionSet,
+  RemoveFunctions,
+  SafeMenuItem,
+} from '@/types'
+import { CloudCogIcon } from 'lucide-react'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_TOKEN
@@ -46,8 +61,12 @@ const isAuth = async () => {
 
 export const fetchMenus = async () => {
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
+
   try {
-    const { data, errors } = await cookieBasedClient.models.Menu.list({ authMode })
+    const { data, errors } = await cookieBasedClient.models.Menu.list({
+      selectionSet: [...menuSelectionSet],
+      authMode,
+    })
 
     if (errors && errors.length > 0) {
       console.error('Error fetching menus:', errors)
@@ -63,11 +82,12 @@ export const fetchMenus = async () => {
 
 export const fetchMenuById = async (id: string) => {
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
-  const { data, errors } = await cookieBasedClient.models.Menu.get({ id }, { authMode })
+  const { data, errors } = await cookieBasedClient.models.Menu.get({ id }, { selectionSet: menuSelectionSet, authMode })
   if (errors && errors.length > 0) {
     console.error('Error fetching menu:', errors)
     throw new Error(errors.map((e) => e.message).join(', '))
   }
+  console.log('fetchMenu', data)
   return data
 }
 
@@ -157,29 +177,150 @@ export async function getSquareItems(ids: string[]): Promise<SquareItem[]> {
     }))
 }
 
-export async function saveMenu(input: Partial<Schema['Menu']['type']> & { id?: string }) {
-  if (input.id) {
-    // Update existing
-    const { data, errors } = await cookieBasedClient.models.Menu.update(input as any, { authMode: 'userPool' })
-    if (errors && errors.length > 0) {
-      console.error('Error updating menu:', errors)
-      throw new Error(errors.map((e) => e.message).join(', '))
-    }
-    return data
-  } else {
-    // Create new
-    const { data, errors } = await cookieBasedClient.models.Menu.create(input as any, { authMode: 'userPool' })
-    if (errors && errors.length > 0) {
-      console.error('Error creating menu:', errors)
-      throw new Error(errors.map((e) => e.message).join(', '))
-    }
-    return data
+export async function saveMenu(input: MenuInput): Promise<{ id: string | null }> {
+  const { id, ...rest } = input
+
+  const cleanData = {
+    ...rest,
+    theme: rest.theme,
   }
+
+  const op = id
+    ? cookieBasedClient.models.Menu.update({ id, ...cleanData }, { authMode: 'userPool' })
+    : cookieBasedClient.models.Menu.create(cleanData, { authMode: 'userPool' })
+
+  const { data, errors } = await op
+
+  if (errors && errors.length > 0) {
+    console.error(`Error ${id ? 'updating' : 'creating'} menu:`, errors)
+    throw new Error(errors.map((e) => e.message).join(', '))
+  }
+
+  return { id: data?.id ?? null }
+}
+
+export async function saveMenuItemsForMenu(menuId: string, selectedCatalogItemIds: string[]) {
+  const { data: existingItems, errors } = await cookieBasedClient.models.MenuItem.list({
+    filter: { menuId: { eq: menuId } },
+    authMode: 'userPool',
+  })
+
+  if (errors && errors.length > 0) {
+    console.error('Error fetching existing MenuItems:', errors)
+    throw new Error(errors.map((e) => e.message).join(', '))
+  }
+
+  const existing = existingItems ?? []
+
+  const existingCatalogIds = new Set(existing.map((mi) => mi.catalogItemId))
+  const selectedCatalogIds = new Set(selectedCatalogItemIds)
+
+  const toDelete = existing.filter((mi) => !selectedCatalogIds.has(mi.catalogItemId))
+  const toCreate = Array.from(selectedCatalogIds).filter((id) => !existingCatalogIds.has(id))
+
+  // Delete items not in new selection
+  await Promise.all(
+    toDelete.map((mi) => cookieBasedClient.models.MenuItem.delete({ id: mi.id }, { authMode: 'userPool' }))
+  )
+
+  // Create new items not already existing
+  await Promise.all(
+    toCreate.map((catalogItemId, index) =>
+      cookieBasedClient.models.MenuItem.create(
+        {
+          menuId,
+          catalogItemId,
+          isFeatured: false,
+          sortOrder: index,
+        },
+        { authMode: 'userPool' }
+      )
+    )
+  )
+}
+
+export async function deleteMenuItem(id: string) {
+  const { data, errors } = await cookieBasedClient.models.MenuItem.delete({ id }, { authMode: 'userPool' })
+  if (errors && errors.length > 0) {
+    console.error('Error deleting menu:', errors)
+    throw new Error(errors.map((e) => e.message).join(', '))
+  }
+  return data?.id
+}
+
+export async function createMenuItem(input: CreateMenuItemInput): Promise<SafeMenuItem> {
+  const { data, errors } = await cookieBasedClient.models.MenuItem.create(
+    {
+      menuId: input.menuId,
+      catalogItemId: input.catalogItemId,
+      isFeatured: input.isFeatured ?? false,
+      sortOrder: input.sortOrder ?? 0,
+    },
+    { authMode: 'userPool' }
+  )
+
+  if (errors && errors.length > 0) {
+    console.error('Error creating MenuItem:', errors)
+    throw new Error(errors.map((e) => e.message).join(', '))
+  }
+
+  return {
+    id: data!.id,
+    menuId: data!.menuId,
+    catalogItemId: data!.catalogItemId,
+    s3ImageKey: data!.s3ImageKey,
+    customName: data!.customName,
+    isFeatured: data!.isFeatured,
+    sortOrder: data!.sortOrder,
+    createdAt: data!.createdAt,
+    updatedAt: data!.updatedAt,
+    owner: data!.owner,
+  }
+}
+
+export async function deleteMenuItemsForMenu(menuId: string): Promise<void> {
+  const { data, errors } = await cookieBasedClient.models.MenuItem.list({
+    filter: { menuId: { eq: menuId } },
+    authMode: 'userPool',
+  })
+
+  if (errors && errors.length > 0) {
+    console.error('Error fetching MenuItems to delete:', errors)
+    throw new Error(errors.map((e) => e.message).join(', '))
+  }
+
+  if (!data?.length) return
+
+  await Promise.all(
+    data.map((item) => cookieBasedClient.models.MenuItem.delete({ id: item.id }, { authMode: 'userPool' }))
+  )
 }
 
 type ItemWithModifiers = {
   item: SquareItem
   modifierLists: SquareModifierList[]
+}
+
+export async function getCatalogItems(): Promise<HydratedCatalog[] | []> {
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  try {
+    const { data, errors } = await cookieBasedClient.models.CatalogItem.list({
+      authMode,
+    })
+    if (errors && errors.length > 0) {
+      console.error('Error fetching menus:', errors)
+      throw new Error(errors.map((e) => e.message).join(', '))
+    }
+
+    const hydrated = data.map((item) =>
+      typeof item.catalogData === 'string' ? (JSON.parse(item.catalogData) as HydratedCatalog) : null
+    )
+
+    return hydrated.filter((item) => item !== null)
+  } catch (err) {
+    console.log(err)
+    return []
+  }
 }
 
 export async function getAllSquareCatalogItems(): Promise<SquareCatalogObject[]> {
@@ -208,7 +349,87 @@ export async function getAllSquareCatalogItems(): Promise<SquareCatalogObject[]>
   }
 }
 
-export async function getSquareItemsWithModifiers(ids: string[]): Promise<ItemWithModifiers[]> {
+//fetch from appsync
+export async function fetchMenuItemsWithModifiers(squareItemIds: string[]): Promise<ItemWithModifiers[]> {
+  const { data, errors } = await cookieBasedClient.models.CatalogItem.list({
+    authMode: 'userPool',
+  })
+
+  if (errors && errors.length > 0) {
+    console.error('Error fetching CatalogItems:', errors)
+    return []
+  }
+  //console.log('fetchMenuItemsWithModifiers', data)
+  const allItems = data ?? []
+
+  const filtered = allItems.filter((item) => squareItemIds.includes(item.squareItemId))
+
+  //console.log('Filtered', filtered)
+
+  // Hydrate and return in expected format
+  const hydrated: ItemWithModifiers[] = filtered.map((ci) => {
+    const parsed = JSON.parse(ci.catalogData as unknown as string) as {
+      item: SquareItem
+      modifierLists?: SquareModifierList[]
+    }
+    const { item, modifierLists } = parsed as {
+      item: SquareItem
+      modifierLists?: SquareModifierList[]
+    }
+    console.log('item', item)
+    return {
+      item,
+      modifierLists: modifierLists ?? [],
+    }
+  })
+  return hydrated
+}
+
+export async function getMenuItemWithCatalogItem(id: string) {
+  const { data: menuItem, errors } = await cookieBasedClient.models.MenuItem.get(
+    { id },
+    { selectionSet: menuItemSelectionSet, authMode: 'userPool' }
+  )
+
+  if (errors?.length || !menuItem) return null
+
+  const { data: catalogItem } = await cookieBasedClient.models.CatalogItem.get(
+    { id: menuItem.catalogItemId },
+    { selectionSet: catalogItemSelectionSet, authMode: 'userPool' }
+  )
+
+  const hydrated = {
+    ...catalogItem,
+    catalogData:
+      typeof catalogItem?.catalogData === 'string' ? JSON.parse(catalogItem.catalogData) : catalogItem?.catalogData,
+  }
+
+  return {
+    ...menuItem,
+    ...hydrated, // for fallback name/image
+    id: menuItem.id,
+  }
+}
+
+export async function updateMenuItem(input: {
+  id: string
+  customName?: string
+  sortOrder?: number
+  isFeatured?: boolean
+}) {
+  console.log('MenuItem update:', input)
+  const { id, ...fields } = input
+  const { data, errors } = await cookieBasedClient.models.MenuItem.update({ id, ...fields }, { authMode: 'userPool' })
+
+  if (errors?.length) {
+    console.error('Update failed:', errors)
+    throw new Error(errors.map((e) => e.message).join(', '))
+  }
+
+  return data?.id
+}
+
+export async function getSquareItemsWithModifiers(): Promise<ItemWithModifiers[]> {
   const res = await fetch(`${SQUARE_BASE_URL}/catalog/list`, {
     method: 'GET',
     headers: {
@@ -222,7 +443,7 @@ export async function getSquareItemsWithModifiers(ids: string[]): Promise<ItemWi
   const objects: SquareCatalogObject[] = json.objects || []
 
   // 1. Filter to only requested items
-  const items: SquareItem[] = objects.filter((obj): obj is SquareItem => obj.type === 'ITEM' && ids.includes(obj.id))
+  const items: SquareItem[] = objects.filter((obj): obj is SquareItem => obj.type === 'ITEM')
 
   // 2. Collect modifier list IDs from both item and variation levels
   const modifierListIds = new Set<string>()
@@ -296,6 +517,85 @@ export async function getSquareItemsWithModifiers(ids: string[]): Promise<ItemWi
       modifierLists: resolvedLists,
     }
   })
+}
+
+export async function syncMenuItems() {
+  const itemsWithModifiers = await getSquareItemsWithModifiers()
+
+  console.log('items to sync', itemsWithModifiers)
+
+  for (const { item, modifierLists } of itemsWithModifiers) {
+    const catalogData = {
+      item,
+      modifierLists,
+    }
+
+    // Save into local DynamoDB catalog
+    const catalogItem = await upsertCatalogItem({
+      squareItemId: item.id,
+      catalogData,
+    })
+
+    //  // Step 2: Save into MenuItem
+    //  await upsertMenuItem({
+    //   menuId,
+    //   catalogItemId: catalogItem.id,
+    //   customName: item.itemData?.name ?? '',
+    // })
+  }
+}
+
+export async function upsertCatalogItem({ squareItemId, catalogData }: { squareItemId: string; catalogData: any }) {
+  const catalogDataString = JSON.stringify(catalogData)
+
+  const { data: existingItems, errors: listErrors } = await cookieBasedClient.models.CatalogItem.list({
+    filter: {
+      squareItemId: { eq: squareItemId },
+    },
+    authMode: 'userPool',
+  })
+
+  console.log('Existing Items', existingItems)
+
+  if (listErrors?.length) {
+    console.error('Error checking existing CatalogItem:', listErrors)
+    throw new Error(listErrors.map((e) => e.message).join(', '))
+  }
+
+  const existing = existingItems?.[0]
+
+  if (existing) {
+    const { data: updatedItem, errors: updateErrors } = await cookieBasedClient.models.CatalogItem.update(
+      {
+        id: existing.id,
+        catalogData: catalogDataString,
+      },
+      { authMode: 'userPool' }
+    )
+
+    if (updateErrors?.length) {
+      console.error('Error updating CatalogItem:', updateErrors)
+      throw new Error(updateErrors.map((e) => e.message).join(', '))
+    }
+
+    return updatedItem
+  } else {
+    const { data: createdItem, errors: createErrors } = await cookieBasedClient.models.CatalogItem.create(
+      {
+        id: squareItemId,
+        squareItemId,
+        catalogData: catalogDataString,
+      },
+      { authMode: 'userPool' }
+    )
+
+    if (createErrors?.length) {
+      console.error('Error creating CatalogItem:', createErrors)
+      throw new Error(createErrors.map((e) => e.message).join(', '))
+    }
+
+    return createdItem
+  }
 }
 
 function getModifierListsForItem(item: SquareItem, all: Record<string, SquareModifierList>): SquareModifierList[] {

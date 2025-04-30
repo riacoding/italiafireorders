@@ -1,6 +1,37 @@
 import { type Schema } from '@/amplify/data/resource'
+import { SelectionSet } from 'aws-amplify/data'
 
 export type Menu = Schema['Menu']['type']
+
+export type MenuItem = Schema['MenuItem']['type']
+export type CatalogItem = Schema['CatalogItem']['type']
+
+export type SafeMenuItem = RemoveFunctions<Schema['MenuItem']['type']>
+
+export type MenuInput = {
+  id?: string
+  name: string
+  locationId: string
+  logo?: string
+  theme?: object | null
+  isActive: boolean
+}
+
+export const menuItemSelectionSet = ['id', 'menuId', 'catalogItemId', 'customName', 'sortOrder', 'isFeatured'] as const
+
+export const catalogItemSelectionSet = ['id', 'squareItemId', 'catalogData'] as const
+
+export const menuSelectionSet = [
+  'id',
+  'name',
+  'locationId',
+  'isActive',
+  'logo',
+  'theme',
+  'createdAt',
+  'updatedAt',
+  'menuItems.*',
+] as const
 
 export interface NormalizedTopping {
   id: string
@@ -9,6 +40,17 @@ export interface NormalizedTopping {
   groupName: string
   isDefault?: boolean // optional
   isLocked?: boolean // optional
+}
+
+export type RemoveFunctions<T> = {
+  [K in keyof T as T[K] extends Function ? never : K]: T[K]
+}
+
+export type CreateMenuItemInput = {
+  menuId: string
+  catalogItemId: string
+  isFeatured?: boolean
+  sortOrder?: number
 }
 
 export interface NormalizedItem {
@@ -100,3 +142,8 @@ export type SquareItem = {
 }
 
 export type SquareCatalogObject = SquareItem | SquareModifier | SquareModifierList | SquareItemVariation
+
+export type HydratedCatalog = {
+  item: SquareCatalogObject
+  modifierLists: SquareModifierList[]
+}

@@ -1,5 +1,6 @@
 'use client'
 
+import { EagerMenu } from '@/lib/fetchMenuWithItems'
 import { Menu } from '@/types'
 import { createContext, useContext } from 'react'
 
@@ -17,11 +18,17 @@ export type NormalizedItem = {
   price: number
   image?: string
   toppings: NormalizedTopping[]
+  customName?: string
+  sortOrder: number
+  isFeatured: boolean
+  menuItemId: string
+  catalogItemId: string
 }
 
 type MenuContextValue = {
   items: NormalizedItem[]
-  menu: Menu
+  menu: EagerMenu
+  location: string
   getItemById: (id: string) => NormalizedItem | undefined
 }
 
@@ -31,14 +38,16 @@ export function MenuProvider({
   items,
   menu,
   children,
+  location,
 }: {
   items: NormalizedItem[]
-  menu: Menu
+  menu: EagerMenu
   children: React.ReactNode
+  location: string
 }) {
   const getItemById = (id: string) => items.find((item) => item.id === id)
 
-  return <MenuContext.Provider value={{ items, getItemById, menu }}>{children}</MenuContext.Provider>
+  return <MenuContext.Provider value={{ items, getItemById, menu, location }}>{children}</MenuContext.Provider>
 }
 
 export function useMenu() {

@@ -7,6 +7,7 @@ import { Minus, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
+import { NormalizedItem, useMenu } from './MenuProvider'
 
 type Topping = {
   id: string
@@ -15,17 +16,9 @@ type Topping = {
   groupName: string
 }
 
-type Item = {
-  id: string
-  name: string
-  description?: string
-  price: number // cents
-  image?: string
-  toppings: Topping[]
-}
-
-export default function ItemDetail({ item }: { item: Item }) {
+export default function ItemDetail({ item }: { item: NormalizedItem }) {
   const { addItem } = useCart()
+  const { location } = useMenu()
   const router = useRouter()
   const [quantity, setQuantity] = useState(1)
   const [selectedToppings, setSelectedToppings] = useState<Record<string, boolean>>({})
@@ -71,13 +64,13 @@ export default function ItemDetail({ item }: { item: Item }) {
     <div className='p-4 max-w-md mx-auto space-y-4'>
       <header className='sticky top-0 bg-white z-10'>
         <div className='flex items-center p-4'>
-          <Link href='/menu/op1' className='mr-4'>
+          <Link href={`/menu/${location}`} className='mr-4'>
             <ChevronLeft className='h-6 w-6' />
           </Link>
           <h1 className='text-xl font-bold'>Add To Order</h1>
         </div>
       </header>
-      <h1 className='text-2xl font-bold'>{item.name}</h1>
+      <h1 className='text-2xl font-bold'>{item.customName || item.name}</h1>
       <p className='text-muted-foreground'>{item.description}</p>
       <p className='font-semibold text-lg'>${(item.price / 100).toFixed(2)}</p>
 
