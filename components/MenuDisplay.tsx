@@ -19,8 +19,11 @@ export default function MenuDisplay({ menu }: { menu: EagerMenu }) {
   return (
     <div className='container max-w-md mx-auto pb-20'>
       <main className='p-4'>
-        <h2 className='text-3xl text-center font-bold mb-5'>{menu.name}</h2>
-        {menu.logo && <img src={menu.logo} alt='logo' />}
+        {menu.logo ? (
+          <img src={menu.logo} alt='logo' />
+        ) : (
+          <h2 className='text-3xl text-center font-bold mb-5'>{menu.name}</h2>
+        )}
 
         <h3 className='text-2xl font-light mb-4'>Our Menu</h3>
         <div className='flex flex-col gap-2'>
