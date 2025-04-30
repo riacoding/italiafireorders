@@ -351,8 +351,9 @@ export async function getAllSquareCatalogItems(): Promise<SquareCatalogObject[]>
 
 //fetch from appsync
 export async function fetchMenuItemsWithModifiers(squareItemIds: string[]): Promise<ItemWithModifiers[]> {
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
   const { data, errors } = await cookieBasedClient.models.CatalogItem.list({
-    authMode: 'userPool',
+    authMode,
   })
 
   if (errors && errors.length > 0) {
