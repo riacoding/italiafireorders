@@ -45,6 +45,7 @@ export default function MenuDisplay({ menu }: { menu: EagerMenu }) {
                       <p className='font-bold mt-1'>
                         <CurrencyDisplay value={item.price} />
                       </p>
+                      <p>{item.isFeatured ? 'featured' : ''}</p>
                     </div>
                     <ChevronRight className='h-5 w-5 text-muted-foreground' />
                   </CardContent>
