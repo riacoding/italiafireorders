@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       quantity: item.quantity.toString(),
       name: item.name,
       basePriceMoney: {
-        amount: BigInt(item.basePrice), // Ensure this is the correct price in cents
+        amount: BigInt(item.price), // Ensure this is the correct price in cents
         currency: 'USD',
       },
       modifiers: item.toppings.map((t: any) => ({

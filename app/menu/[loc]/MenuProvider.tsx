@@ -1,29 +1,8 @@
 'use client'
 
 import { EagerMenu } from '@/lib/fetchMenuWithItems'
-import { Menu } from '@/types'
-import { createContext, useContext } from 'react'
-
-export type NormalizedTopping = {
-  id: string
-  name: string
-  price: number
-  groupName: string
-}
-
-export type NormalizedItem = {
-  id: string
-  name: string
-  description?: string
-  price: number
-  image?: string
-  toppings: NormalizedTopping[]
-  customName?: string
-  sortOrder: number
-  isFeatured: boolean
-  menuItemId: string
-  catalogItemId: string
-}
+import { Menu, NormalizedItem } from '@/types'
+import { createContext, useContext, useEffect } from 'react'
 
 type MenuContextValue = {
   items: NormalizedItem[]
@@ -46,6 +25,12 @@ export function MenuProvider({
   location: string
 }) {
   const getItemById = (id: string) => items.find((item) => item.id === id)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastMenuLoc', location)
+    }
+  }, [location])
 
   return <MenuContext.Provider value={{ items, getItemById, menu, location }}>{children}</MenuContext.Provider>
 }

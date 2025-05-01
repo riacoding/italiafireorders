@@ -5,17 +5,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import type { SquareItem } from '@/types'
-import { Menu } from '@/types'
 import { useMenu } from '@/app/menu/[loc]/MenuProvider'
 import CurrencyDisplay from './CurrencyDisplay'
-import { useCart } from '@/components/CartContext'
+
 import { EagerMenu } from '@/lib/fetchMenuWithItems'
 import { StorageImage } from '@aws-amplify/ui-react-storage'
 
 export default function MenuDisplay({ menu }: { menu: EagerMenu }) {
   const { items } = useMenu()
-  const { items: cartItems, getTotalItems } = useCart()
+
   return (
     <div className='container max-w-md mx-auto pb-20'>
       <main className='p-4'>
@@ -56,26 +54,5 @@ export default function MenuDisplay({ menu }: { menu: EagerMenu }) {
         </div>
       </main>
     </div>
-  )
-}
-
-function CartIcon() {
-  return (
-    <svg
-      xmlns='http://www.w3.org/2000/svg'
-      width='24'
-      height='24'
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='currentColor'
-      strokeWidth='2'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-      className='h-6 w-6'
-    >
-      <circle cx='8' cy='21' r='1' />
-      <circle cx='19' cy='21' r='1' />
-      <path d='M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12' />
-    </svg>
   )
 }

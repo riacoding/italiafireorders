@@ -3,7 +3,7 @@
 import { cache } from 'react'
 import { fetchMenuItemsWithModifiers, getCurrentMenu } from '@/lib/ssr-actions'
 import { normalizeSquareItem } from '@/lib/utils'
-import type { NormalizedItem } from '@/app/menu/[loc]/MenuProvider'
+import type { NormalizedItem } from '@/types'
 import type { Schema } from '@/amplify/data/resource'
 
 // Narrowed return type — remove lazy fields

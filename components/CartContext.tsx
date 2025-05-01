@@ -1,21 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState } from 'react'
-
-type CartTopping = {
-  id: string
-  name: string
-  price: number
-}
-
-type CartItem = {
-  id: string
-  name: string
-  basePrice: number
-  quantity: number
-  image?: string
-  toppings: CartTopping[]
-}
+import { CartItem, NormalizedTopping } from '@/types'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 
 type CartContextType = {
   items: CartItem[]
@@ -29,22 +15,58 @@ type CartContextType = {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  const [items, setItems] = useState<CartItem[]>([])
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('cartItems')
+      if (stored) {
+        try {
+          return JSON.parse(stored)
+        } catch (e) {
+          console.error('Failed to parse stored cart items:', e)
+        }
+      }
+    }
+    return []
+  })
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cartItems', JSON.stringify(items))
+    }
+  }, [items])
+
+  const toppingsMatch = (a: NormalizedTopping[], b: NormalizedTopping[]) => {
+    if (a.length !== b.length) return false
+    const idsA = a.map((t) => t.id).sort()
+    const idsB = b.map((t) => t.id).sort()
+    return idsA.every((id, idx) => id === idsB[idx])
+  }
 
   const addItem = (item: CartItem) => {
-    setItems((prev) => [...prev, item])
+    const existingIndex = items.findIndex((i) => i.id === item.id && toppingsMatch(i.toppings, item.toppings))
+
+    if (existingIndex !== -1) {
+      const updated = [...items]
+      updated[existingIndex].quantity += item.quantity
+      setItems(updated)
+    } else {
+      setItems([...items, item])
+    }
   }
 
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id))
   }
 
-  const clearCart = () => setItems([])
+  const clearCart = () => {
+    localStorage.removeItem('cartItems')
+    setItems([])
+  }
 
   const getTotal = () =>
     items.reduce((sum, item) => {
       const toppingsTotal = item.toppings.reduce((tSum, t) => tSum + t.price, 0)
-      return sum + (item.basePrice + toppingsTotal) * item.quantity
+      return sum + (item.price + toppingsTotal) * item.quantity
     }, 0)
 
   const getTotalItems = () =>

@@ -52,14 +52,18 @@ export type CreateMenuItemInput = {
   isFeatured?: boolean
   sortOrder?: number
 }
-
-export interface NormalizedItem {
+export type NormalizedItem = {
   id: string
   name: string
   description?: string
-  price: number // in cents
+  price: number
   image?: string
   toppings: NormalizedTopping[]
+  customName?: string
+  sortOrder: number
+  isFeatured: boolean
+  menuItemId: string
+  catalogItemId: string
 }
 
 export type CartTopping = {
@@ -68,12 +72,9 @@ export type CartTopping = {
   price: number
 }
 
-export type CartItem = {
-  id: string
-  name: string
-  basePrice: number
+export type CartItem = NormalizedItem & {
   quantity: number
-  toppings: CartTopping[]
+  toppings: NormalizedTopping[]
 }
 
 export type SquareMoney = {

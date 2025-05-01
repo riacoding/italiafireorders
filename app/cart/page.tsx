@@ -1,6 +1,5 @@
 'use client'
-
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, Trash2 } from 'lucide-react'
@@ -10,16 +9,37 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useCart } from '@/components/CartContext'
 import CurrencyDisplay from '@/components/CurrencyDisplay'
 import { useToast } from '@/hooks/use-toast'
+import { StorageImage } from '@aws-amplify/ui-react-storage'
+import { useRouter } from 'next/navigation'
+import { CartItem } from '@/types'
 
 const locationId = 'L49ESK4NHETS7'
 
 export default function CartPage() {
+  const [hasHydrated, setHasHydrated] = useState(false)
   const { toast } = useToast()
   const { items: cartItems, removeItem, clearCart } = useCart()
+  const [backLink, setBackLink] = useState('')
   console.log('items', cartItems)
+  const router = useRouter()
+
+  useEffect(() => {
+    setHasHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    const lastLoc = localStorage.getItem('lastMenuLoc')
+    const link = lastLoc ? `/menu/${lastLoc}` : '/'
+    setBackLink(link)
+  }, [])
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => total + item.basePrice * item.quantity, 0)
+    return cartItems.reduce((total, item) => total + getItemTotal(item), 0)
+  }
+
+  const getItemTotal = (item: CartItem): number => {
+    const toppingsTotal = item.toppings.reduce((sum, t) => sum + t.price, 0)
+    return (item.price + toppingsTotal) * item.quantity
   }
 
   const placeOrder = async () => {
@@ -57,11 +77,13 @@ export default function CartPage() {
     clearCart()
   }
 
+  if (!hasHydrated) return null
+
   return (
     <div className='container max-w-md mx-auto pb-20'>
       <header className='sticky top-0 bg-white z-10 border-b'>
         <div className='flex items-center p-4'>
-          <Link href='/menu/op1' className='mr-4'>
+          <Link href={backLink} className='mr-4'>
             <ChevronLeft className='h-6 w-6' />
           </Link>
           <h1 className='text-xl font-bold'>Your Order</h1>
@@ -73,7 +95,7 @@ export default function CartPage() {
           <div className='text-center py-12'>
             <h2 className='text-xl font-semibold mb-2'>Your cart is empty</h2>
             <p className='text-muted-foreground mb-6'>Add some delicious pizzas to get started!</p>
-            <Link href='/menu/op1'>
+            <Link href={backLink}>
               <Button>Browse Menu</Button>
             </Link>
           </div>
@@ -85,16 +107,15 @@ export default function CartPage() {
                   <CardContent className='p-3'>
                     <div className='flex items-start'>
                       <div className='w-16 h-16 relative mr-3'>
-                        <Image
-                          src={item.image || '/placeholder.svg'}
-                          alt={item.name}
-                          fill
-                          className='object-cover rounded'
+                        <StorageImage
+                          className='w-full h-full object-cover rounded border'
+                          path={`items/${item.catalogItemId}.jpg`}
+                          alt='Preview'
                         />
                       </div>
                       <div className='flex-1'>
                         <div className='flex justify-between'>
-                          <h3 className='font-medium'>{item.name}</h3>
+                          <h3 className='font-medium'>{item.customName ?? item.name}</h3>
                           <Button variant='ghost' size='icon' className='h-8 w-8' onClick={() => removeItem(item.id)}>
                             <Trash2 className='h-4 w-4' />
                           </Button>
@@ -109,7 +130,7 @@ export default function CartPage() {
                             )}
                           </div>
                           <p className='font-bold'>
-                            <CurrencyDisplay value={item.basePrice * item.quantity} />
+                            <CurrencyDisplay value={getItemTotal(item)} />
                           </p>
                         </div>
                       </div>
@@ -133,14 +154,14 @@ export default function CartPage() {
               <div className='flex justify-between'>
                 <span>Tax</span>
                 <span>
-                  <CurrencyDisplay value={calculateTotal() * 0.08} />
+                  <CurrencyDisplay value={calculateTotal() * 0.0825} />
                 </span>
               </div>
               <Separator className='my-2' />
               <div className='flex justify-between font-bold text-lg'>
                 <span>Total</span>
                 <span>
-                  <CurrencyDisplay value={calculateTotal() + calculateTotal() * 0.08} />
+                  <CurrencyDisplay value={calculateTotal() + calculateTotal() * 0.0825} />
                 </span>
               </div>
             </div>
@@ -148,7 +169,7 @@ export default function CartPage() {
         )}
       </main>
 
-      <div className='fixed bottom-0 left-0 right-0 p-4 bg-white border-t'>
+      <div className=' p-4 '>
         <Button className='w-full' size='lg' onClick={placeOrder} disabled={cartItems.length === 0}>
           Place Order
         </Button>

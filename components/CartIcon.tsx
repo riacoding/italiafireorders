@@ -3,12 +3,17 @@
 import { useRouter } from 'next/navigation'
 import { ShoppingCart } from 'lucide-react'
 import { useCart } from '@/components/CartContext' // adjust path if needed
+import { useEffect, useState } from 'react'
 
 export default function CartIcon() {
+  const [itemCount, setItemCount] = useState(0)
   const router = useRouter()
   const { items } = useCart()
 
-  const itemCount = items.reduce((total, item) => total + item.quantity, 0)
+  useEffect(() => {
+    const count = items.reduce((total, item) => total + item.quantity, 0)
+    setItemCount(count)
+  }, [items])
 
   return (
     <div className='relative'>

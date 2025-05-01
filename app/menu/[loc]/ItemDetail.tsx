@@ -7,7 +7,8 @@ import { Minus, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
-import { NormalizedItem, useMenu } from './MenuProvider'
+import { useMenu } from './MenuProvider'
+import { CartItem, NormalizedItem, NormalizedTopping } from '@/types'
 
 type Topping = {
   id: string
@@ -39,7 +40,7 @@ export default function ItemDetail({ item }: { item: NormalizedItem }) {
   }
 
   const calculateTotal = () => {
-    const toppingTotal = item.toppings.reduce((sum, t) => {
+    const toppingTotal = item.toppings.reduce((sum: number, t: NormalizedTopping) => {
       return selectedToppings[t.id] ? sum + t.price : sum
     }, 0)
 
@@ -47,11 +48,9 @@ export default function ItemDetail({ item }: { item: NormalizedItem }) {
   }
 
   const handleAddToCart = () => {
-    const selected = item.toppings.filter((t) => selectedToppings[t.id])
-    const cartItem = {
-      id: item.id,
-      name: item.name,
-      basePrice: item.price,
+    const selected = item.toppings.filter((t: NormalizedTopping) => selectedToppings[t.id])
+    const cartItem: CartItem = {
+      ...item,
       quantity,
       toppings: selected,
     }
