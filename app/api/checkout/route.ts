@@ -11,6 +11,7 @@ const client = new SquareClient({
 })
 
 export async function POST(req: NextRequest) {
+  console.log('SQUARE_ACCESS_TOKEN length:', process.env.SQUARE_ACCESS_TOKEN?.length)
   try {
     const body = await req.json()
     const { cartItems, locationId, menuSlug } = body
