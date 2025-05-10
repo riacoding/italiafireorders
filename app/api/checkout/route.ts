@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       quantity: item.quantity.toString(),
       name: item.customName || item.name,
       basePriceMoney: {
-        amount: BigInt(item.price), // Ensure this is the correct price in cents
+        amount: Number(item.price), // Ensure this is the correct price in cents
         currency: 'USD',
       },
       metadata: {
