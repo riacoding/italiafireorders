@@ -57,7 +57,7 @@ export class SquareWebhookStack extends Construct {
 
     //  Create SQS Queue
     const squareQueue = new sqs.Queue(this, 'SquareWebhookQueue', {
-      queueName: 'SquareWebhookQueue',
+      queueName: `${environment}-SquareWebhookQueue`,
       retentionPeriod: cdk.Duration.days(4), // Retains messages for 4 days
       visibilityTimeout: cdk.Duration.seconds(30), // Matches Lambda timeout
     })
@@ -66,7 +66,7 @@ export class SquareWebhookStack extends Construct {
 
     //  Create SQS DLQ
     const squareDLQ = new sqs.Queue(this, `${id}-SquareWebhookQueueDLQ`, {
-      queueName: 'SquareWebhookDLQ',
+      queueName: `${environment}-SquareWebhookDLQ`,
       retentionPeriod: cdk.Duration.days(4), // Retains messages for 4 days
       visibilityTimeout: cdk.Duration.minutes(30), // Matches Lambda timeout
     })
@@ -94,8 +94,8 @@ export class SquareWebhookStack extends Construct {
     // data.resources.graphqlApi.grantMutation(messageProcessorLambda)
 
     //  Create Message DLQ Processor Lambda (Reads from SQS DLQ)
-    const squareDLQProcessorLambda = new NodejsFunction(this, `${id}-SquareDLQHandler`, {
-      functionName: `${id}-SquareDLQHandler`,
+    const squareDLQProcessorLambda = new NodejsFunction(this, `${environment}-SquareDLQHandler`, {
+      functionName: `${environment}-SquareDLQHandler`,
       runtime: lambda.Runtime.NODEJS_22_X,
       entry: url.fileURLToPath(new URL('./SquareDLQ/processor.ts', import.meta.url)),
       timeout: cdk.Duration.seconds(30),
