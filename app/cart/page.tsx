@@ -61,7 +61,7 @@ export default function CartPage() {
     const data = await res.json()
     console.log('checkout link url', data)
     if (data.url) {
-      window.location.href = data.url
+      window.location.assign(data.url)
       return
     } else {
       // Handle error
