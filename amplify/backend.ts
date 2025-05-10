@@ -17,7 +17,6 @@ import { SquareWebhookStack } from './custom/webhookqueue/resource'
 import branchName from 'current-git-branch'
 
 config({ path: '.env.local', override: false })
-const environment: string = String(branchName() || process.env.AWS_BRANCH || 'dev')
 
 const backend = defineBackend({
   auth,
@@ -28,7 +27,7 @@ const backend = defineBackend({
   webhookProcessor,
   twilioInbound,
 })
-
+const environment = backend.stack.stackName.split('-').pop() ?? 'prod'
 const ordersTable = backend.data.resources.tables['Order']
 
 const squareWebhook = new SquareWebhookStack(backend.data.stack, 'SquareWebHookStack', {
