@@ -13,12 +13,12 @@ import { StorageImage } from '@aws-amplify/ui-react-storage'
 import { useRouter } from 'next/navigation'
 import { CartItem } from '@/types'
 
-const locationId = 'L49ESK4NHETS7'
+const locationId = process.env.NEXT_PUBLIC_LOCATION_ID
 
 export default function CartPage() {
   const [hasHydrated, setHasHydrated] = useState(false)
   const { toast } = useToast()
-  const { items: cartItems, removeItem, clearCart } = useCart()
+  const { items: cartItems, removeItem, clearCart, menuSlug } = useCart()
   const [backLink, setBackLink] = useState('')
   console.log('items', cartItems)
   const router = useRouter()
@@ -55,7 +55,7 @@ export default function CartPage() {
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cartItems, locationId }),
+      body: JSON.stringify({ cartItems, locationId, menuSlug }),
     })
 
     const data = await res.json()
@@ -101,7 +101,7 @@ export default function CartPage() {
           </div>
         ) : (
           <>
-            <div className='space-y-4 mb-6'>
+            <div id='menuItems' className='space-y-4 mb-6'>
               {cartItems.map((item, index) => (
                 <Card key={index} className='overflow-hidden'>
                   <CardContent className='p-3'>
@@ -110,7 +110,7 @@ export default function CartPage() {
                         <StorageImage
                           className='w-full h-full object-cover rounded border'
                           path={`items/${item.catalogItemId}.jpg`}
-                          alt='Preview'
+                          alt='menu item'
                         />
                       </div>
                       <div className='flex-1'>
@@ -146,7 +146,6 @@ export default function CartPage() {
               <div className='flex justify-between'>
                 <span>Subtotal</span>
                 <span>
-                  {' '}
                   <CurrencyDisplay value={calculateTotal()} />
                 </span>
               </div>
@@ -157,6 +156,7 @@ export default function CartPage() {
                   <CurrencyDisplay value={calculateTotal() * 0.0825} />
                 </span>
               </div>
+
               <Separator className='my-2' />
               <div className='flex justify-between font-bold text-lg'>
                 <span>Total</span>
@@ -169,8 +169,8 @@ export default function CartPage() {
         )}
       </main>
 
-      <div className=' p-4 '>
-        <Button className='w-full' size='lg' onClick={placeOrder} disabled={cartItems.length === 0}>
+      <div className='p-4'>
+        <Button className='w-full mt-6' size='lg' onClick={placeOrder} disabled={cartItems.length === 0}>
           Place Order
         </Button>
       </div>

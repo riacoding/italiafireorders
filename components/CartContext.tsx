@@ -10,6 +10,7 @@ type CartContextType = {
   clearCart: () => void
   getTotal: () => number
   getTotalItems: () => number
+  menuSlug: string | null
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -27,6 +28,20 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     return []
+  })
+
+  const [menuSlug, setMenuSlug] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('lastMenuLoc')
+      if (stored) {
+        try {
+          return stored
+        } catch (e) {
+          console.error('Failed to parse stored menu slug:', e)
+        }
+      }
+    }
+    return null
   })
 
   useEffect(() => {
@@ -75,7 +90,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }, 0)
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, getTotal, getTotalItems }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, getTotal, getTotalItems, menuSlug }}>
       {children}
     </CartContext.Provider>
   )

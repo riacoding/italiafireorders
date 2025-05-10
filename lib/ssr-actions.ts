@@ -44,8 +44,10 @@ import {
   catalogItemSelectionSet,
   RemoveFunctions,
   SafeMenuItem,
+  ReceiptItem,
 } from '@/types'
 import { CloudCogIcon } from 'lucide-react'
+import { extractReceiptItems } from './utils'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_TOKEN
@@ -175,6 +177,82 @@ export async function getSquareItems(ids: string[]): Promise<SquareItem[]> {
       price: item.item_data?.variations?.[0]?.item_variation_data?.price_money?.amount / 100 || 0,
       image: '/placeholder.svg', // You could later use Square image links
     }))
+}
+
+export async function getSquareOrderByOrderNumber(orderNumber: string): Promise<ReceiptItem[] | null> {
+  const token = process.env.SQUARE_ACCESS_TOKEN || 'noToken'
+  const locationId = process.env.SQUARE_LOCATION_ID || 'noLocation'
+
+  // Construct full reference ID from today's date and order number
+  const date = new Date()
+  const yyyymmdd = date.toISOString().slice(0, 10).replace(/-/g, '')
+  const dateStr = yyyymmdd // YYYYMMDD
+
+  const referenceId = `${dateStr}-${orderNumber}` // e.g., 20250505-003
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+
+  try {
+    const { data, errors } = await cookieBasedClient.models.Order.listOrderByReferenceId(
+      { referenceId: referenceId },
+      { authMode }
+    )
+
+    if (errors && errors?.length > 0) {
+      console.error('Error fetching order:', errors)
+      throw new Error(errors.map((e) => e.message).join(', '))
+    }
+    const raw = data[0]?.rawData
+
+    if (typeof raw !== 'string') {
+      console.error('❌ rawData is missing or not a string')
+      return null
+    }
+
+    const order = JSON.parse(raw)
+    console.log('order:', order)
+    const menuSlug = order?.metadata?.menuSlug
+    const menu = menuSlug ? await getCurrentMenu(menuSlug) : null
+    if (menu) {
+      const { data: menuItems } = await menu.menuItems()
+
+      const nameOverrides: Record<string, string> = {}
+      for (const item of menuItems) {
+        if (item.catalogItemId && item.customName) {
+          nameOverrides[item.catalogItemId] = item.customName
+        }
+      }
+      console.log('name overrides', nameOverrides)
+      const receiptItems = extractReceiptItems(order, nameOverrides)
+      return receiptItems
+    }
+
+    return null
+  } catch (err) {
+    console.error(`Error fetching order ${orderNumber} referenceId: ${referenceId}`, err)
+    return null
+  }
+
+  // const res = await fetch('https://connect.squareupsandbox.com/v2/orders/search', {
+  //   method: 'POST',
+  //   headers: {
+  //     Authorization: `Bearer ${token}`,
+  //     'Content-Type': 'application/json',
+  //   },
+  //   body: JSON.stringify({
+  //     location_ids: [locationId],
+  //     query: {
+  //       filter: {
+  //         reference_id: {
+  //           exact: referenceId,
+  //         },
+  //       },
+  //     },
+  //   }),
+  //   cache: 'no-store',
+  // })
+
+  // const json = await res.json()
+  // return json.orders?.[0] || null
 }
 
 export async function saveMenu(input: MenuInput): Promise<{ id: string | null }> {
@@ -531,9 +609,16 @@ export async function syncMenuItems() {
       modifierLists,
     }
 
+    const variation = item.item_data.variations?.find((v) => v.item_variation_data?.name === 'Regular')
+
+    const catalogVariationId = variation?.id!
+
+    console.log('variation', catalogVariationId, variation)
+
     // Save into local DynamoDB catalog
     const catalogItem = await upsertCatalogItem({
       squareItemId: item.id,
+      catalogVariationId,
       catalogData,
     })
 
@@ -546,7 +631,15 @@ export async function syncMenuItems() {
   }
 }
 
-export async function upsertCatalogItem({ squareItemId, catalogData }: { squareItemId: string; catalogData: any }) {
+export async function upsertCatalogItem({
+  squareItemId,
+  catalogVariationId,
+  catalogData,
+}: {
+  squareItemId: string
+  catalogVariationId: string
+  catalogData: any
+}) {
   const catalogDataString = JSON.stringify(catalogData)
 
   const { data: existingItems, errors: listErrors } = await cookieBasedClient.models.CatalogItem.list({
@@ -569,6 +662,7 @@ export async function upsertCatalogItem({ squareItemId, catalogData }: { squareI
     const { data: updatedItem, errors: updateErrors } = await cookieBasedClient.models.CatalogItem.update(
       {
         id: existing.id,
+        catalogVariationId: catalogVariationId,
         catalogData: catalogDataString,
       },
       { authMode: 'userPool' }

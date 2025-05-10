@@ -42,6 +42,18 @@ export interface NormalizedTopping {
   isLocked?: boolean // optional
 }
 
+export type ReceiptItem = {
+  name: string
+  quantity: number
+  basePrice: number
+  totalPrice: number
+  modifiers: {
+    name: string
+    quantity: number
+    price: number
+  }[]
+}
+
 export type RemoveFunctions<T> = {
   [K in keyof T as T[K] extends Function ? never : K]: T[K]
 }
@@ -64,6 +76,7 @@ export type NormalizedItem = {
   isFeatured: boolean
   menuItemId: string
   catalogItemId: string
+  catalogVariationId: string
 }
 
 export type CartTopping = {
@@ -116,6 +129,7 @@ export type SquareItemVariation = {
   id: string
   type: 'ITEM_VARIATION'
   item_variation_data: {
+    item_id: string
     name: string
     price_money?: SquareMoney
     modifier_list_info?: {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookieBasedClient } from '@/util/amplify'
 import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
 
@@ -6,20 +7,26 @@ const client = new SquareClient({
   token: process.env.SQUARE_ACCESS_TOKEN!,
   // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
   environment: SquareEnvironment.Sandbox,
+  version: '2025-04-16',
 })
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { cartItems, locationId } = body
+    const { cartItems, locationId, menuSlug } = body
 
+    const { data: ticket } = await cookieBasedClient.queries.getTicket()
+    console.log('cartItems', JSON.stringify(cartItems, null, 2))
     const lineItems = cartItems.map((item: any) => ({
-      catalogObjectId: item.squareItemId,
+      catalogObjectId: item.catalogVariationId,
       quantity: item.quantity.toString(),
-      name: item.name,
+      name: item.customName || item.name,
       basePriceMoney: {
         amount: BigInt(item.price), // Ensure this is the correct price in cents
         currency: 'USD',
+      },
+      metadata: {
+        catalogItemId: item.id,
       },
       modifiers: item.toppings.map((t: any) => ({
         name: t.name,
@@ -28,7 +35,7 @@ export async function POST(req: NextRequest) {
           amount: BigInt(t.price),
           currency: 'USD',
         },
-        catalogObjectId: t.squareModifierId,
+        catalogObjectId: t.id,
       })),
     }))
 
@@ -37,7 +44,8 @@ export async function POST(req: NextRequest) {
       idempotencyKey: randomUUID(),
       order: {
         locationId,
-        referenceId: `order-${Date.now()}`,
+        referenceId: ticket?.ticketNumber,
+        ticketName: ticket?.ticketNumber,
         lineItems,
         taxes: [
           {
@@ -47,9 +55,27 @@ export async function POST(req: NextRequest) {
             percentage: '8.25',
           },
         ],
+        fulfillments: [
+          {
+            type: 'PICKUP',
+            state: 'PROPOSED',
+            pickupDetails: {
+              recipient: {
+                displayName: ticket?.ticketNumber,
+              },
+              note: 'Customer will pick up at the counter.',
+              pickupAt: new Date(Date.now() + 15 * 60000).toISOString(), // 15 mins from now
+            },
+          },
+        ],
+        metadata: {
+          menuSlug: menuSlug,
+          ticketNumber: ticket?.ticketNumber,
+        },
       },
       checkoutOptions: {
-        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/thankyou?order=${Date.now()}`,
+        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/thankyou?order=${ticket?.ticketNumber?.slice(-3)}`,
+        allowTipping: true,
       },
     })
 
