@@ -7,7 +7,6 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL!
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   console.log('event:', event)
-  console.log('Env:', process.env)
   const rawBody = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || ''
   const signature = event.headers['x-square-signature']
 
