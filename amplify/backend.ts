@@ -14,8 +14,10 @@ import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations
 import { CorsHttpMethod, HttpApi, HttpMethod, PayloadFormatVersion } from 'aws-cdk-lib/aws-apigatewayv2'
 import { Stack } from 'aws-cdk-lib'
 import { SquareWebhookStack } from './custom/webhookqueue/resource'
+import branchName from 'current-git-branch'
 
 config({ path: '.env.local', override: false })
+const environment: string = String(branchName() || process.env.AWS_BRANCH || 'dev')
 
 const backend = defineBackend({
   auth,
@@ -27,7 +29,6 @@ const backend = defineBackend({
   twilioInbound,
 })
 
-const environment = backend.stack.stackName
 const ordersTable = backend.data.resources.tables['Order']
 
 const squareWebhook = new SquareWebhookStack(backend.data.stack, 'SquareWebHookStack', {

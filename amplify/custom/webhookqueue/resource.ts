@@ -94,7 +94,7 @@ export class SquareWebhookStack extends Construct {
     // data.resources.graphqlApi.grantMutation(messageProcessorLambda)
 
     //  Create Message DLQ Processor Lambda (Reads from SQS DLQ)
-    const squareDLQProcessorLambda = new NodejsFunction(this, `${environment}-SquareDLQHandler`, {
+    const squareDLQProcessorLambda = new NodejsFunction(this, `${id}-SquareDLQHandler`, {
       functionName: `${environment}-SquareDLQHandler`,
       runtime: lambda.Runtime.NODEJS_22_X,
       entry: url.fileURLToPath(new URL('./SquareDLQ/processor.ts', import.meta.url)),
