@@ -1,6 +1,5 @@
 // app/menu/MenuDisplay.tsx
 'use client'
-
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
@@ -11,8 +10,8 @@ import CurrencyDisplay from './CurrencyDisplay'
 import { EagerMenu } from '@/lib/fetchMenuWithItems'
 import { StorageImage } from '@aws-amplify/ui-react-storage'
 
-export default function MenuDisplay({ menu }: { menu: EagerMenu }) {
-  const { items } = useMenu()
+export default function MenuDisplay() {
+  const { menu, items } = useMenu()
 
   return (
     <div className='container max-w-md mx-auto pb-20'>

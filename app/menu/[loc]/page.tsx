@@ -1,7 +1,5 @@
 // app/menu/page.tsx
-'use client'
 import MenuDisplay from '@/components/MenuDisplay'
-import { useMenu } from './MenuProvider'
 import { fetchMenuWithItems } from '@/lib/fetchMenuWithItems'
 import { Metadata } from 'next'
 
@@ -33,7 +31,5 @@ export async function generateMetadata({ params }: { params: { loc: string } }):
 }
 
 export default function MenuPage() {
-  const { menu } = useMenu()
-
-  return <MenuDisplay menu={menu} />
+  return <MenuDisplay />
 }

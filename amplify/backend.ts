@@ -27,7 +27,7 @@ const backend = defineBackend({
   webhookProcessor,
   twilioInbound,
 })
-const environment = backend.stack.stackName.split('-').pop() ?? 'prod'
+const environment = process.env.ENVIRONMENT ?? 'dev'
 const ordersTable = backend.data.resources.tables['Order']
 
 const squareWebhook = new SquareWebhookStack(backend.data.stack, 'SquareWebHookStack', {
