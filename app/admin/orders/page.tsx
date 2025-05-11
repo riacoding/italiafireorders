@@ -43,6 +43,7 @@ export default function OrdersPage() {
               const bDate = new Date(b.rawData?.createdAt ?? 0).getTime()
               return bDate - aDate // oldest to newest — flip for newest first
             })
+            .filter((o) => o.status === 'OPEN')
         )
       },
     })
