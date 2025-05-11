@@ -5,6 +5,7 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '@/amplify/data/resource'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import OrderTimer from '@/components/OrderTimer'
 import { format } from 'date-fns'
 import { SquareOrder } from '@/types'
 import { cn } from '@/lib/utils'
@@ -77,6 +78,10 @@ export default function OrdersPage() {
                       {fulfillment?.pickupAt && (
                         <p className='text-sm'>Pickup: {format(new Date(fulfillment.pickupAt), 'p')}</p>
                       )}
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-xs text-muted-foreground'>Time since order:</span>
+                      <OrderTimer createdAt={raw.createdAt!} />
                     </div>
                     <div className='text-right'>
                       <p className='text-sm'>Total: ${(total / 100).toFixed(2)}</p>
