@@ -66,7 +66,7 @@ export default function OrdersPage() {
             return (
               <Card
                 key={order.id}
-                className={cn('transition-all border', newOrderIds.has(order.id) && 'border-yellow-500 animate-pulse')}
+                className={cn('transition-all border-4', newOrderIds.has(order.id) && 'border-blue-500 animate-pulse')}
               >
                 <CardContent className='p-4 space-y-2'>
                   <div className='flex justify-between'>
