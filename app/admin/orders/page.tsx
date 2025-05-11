@@ -84,18 +84,38 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  {lineItems.length > 0 && (
-                    <>
-                      <Separator />
-                      <ul className='text-sm pl-4 list-disc'>
-                        {lineItems.map((item: any, idx: number) => (
-                          <li key={idx}>
+                  <ul className='text-sm pl-4 list-disc'>
+                    {lineItems.map((item: any, idx: number) => (
+                      <li key={idx} className='mb-1'>
+                        <div className='flex justify-between'>
+                          <span>
                             {item.name} × {item.quantity}
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
+                          </span>
+                          <span className='text-sm text-muted-foreground'>
+                            ${(Number(item.totalMoney?.amount ?? 0) / 100).toFixed(2)}
+                          </span>
+                        </div>
+
+                        {item.variationName && (
+                          <div className='text-xs text-muted-foreground italic'>{item.variationName}</div>
+                        )}
+
+                        {/* Render modifiers, if any */}
+                        {item.modifiers?.length > 0 && (
+                          <ul className='ml-4 text-xs text-muted-foreground list-disc'>
+                            {item.modifiers.map((mod: any, i: number) => (
+                              <li key={i}>
+                                {mod.name} {mod.quantity && `× ${mod.quantity}`}
+                                {mod.totalPriceMoney?.amount && (
+                                  <> — +${(Number(mod.totalPriceMoney.amount) / 100).toFixed(2)}</>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             )

@@ -146,6 +146,15 @@ export type SquareOrder = {
     totalMoney?: Money
     variationTotalPriceMoney?: Money
     metadata?: Record<string, string>
+    modifiers?: Array<{
+      uid: string
+      name: string
+      quantity: string
+      basePriceMoney?: Money
+      totalPriceMoney?: Money
+      catalogObjectId?: string
+      catalogVersion?: string
+    }>
     appliedTaxes?: Array<{
       uid: string
       taxUid: string
