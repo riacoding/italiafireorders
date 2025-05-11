@@ -16,6 +16,7 @@ import { CartItem } from '@/types'
 const locationId = process.env.NEXT_PUBLIC_LOCATION_ID
 
 export default function CartPage() {
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [hasHydrated, setHasHydrated] = useState(false)
   const { toast } = useToast()
   const { items: cartItems, removeItem, clearCart, menuSlug } = useCart()
@@ -51,6 +52,8 @@ export default function CartPage() {
       })
       return
     }
+
+    setIsPlacingOrder(true)
 
     const res = await fetch('/api/checkout', {
       method: 'POST',
@@ -170,8 +173,23 @@ export default function CartPage() {
       </main>
 
       <div className='p-4'>
-        <Button className='w-full mt-6' size='lg' onClick={placeOrder} disabled={cartItems.length === 0}>
-          Place Order
+        <Button
+          className='w-full mt-6'
+          size='lg'
+          onClick={placeOrder}
+          disabled={cartItems.length === 0 || isPlacingOrder}
+        >
+          {isPlacingOrder ? (
+            <div className='flex items-center justify-center space-x-2'>
+              <svg className='w-4 h-4 animate-spin' viewBox='0 0 24 24'>
+                <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8v8z'></path>
+              </svg>
+              <span>Processing...</span>
+            </div>
+          ) : (
+            'Place Order'
+          )}
         </Button>
       </div>
     </div>
