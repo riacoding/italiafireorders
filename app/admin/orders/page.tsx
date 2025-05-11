@@ -7,26 +7,38 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { format } from 'date-fns'
 import { SquareOrder } from '@/types'
+import { cn } from '@/lib/utils'
 
 const client = generateClient<Schema>()
 type Order = Schema['Order']['type'] & { rawData: SquareOrder }
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
+  const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const sub = client.models.Order.observeQuery().subscribe({
       next: ({ items }) => {
-        const hydrated = items.map((item) => ({
-          ...item,
-          rawData: typeof item.rawData === 'string' ? JSON.parse(item.rawData) : item.rawData,
-        })) as Order[]
-        setOrders(hydrated)
+        const incoming = new Set(items.map((o) => o.id))
+        const newlyAdded = items.filter((o) => !orders.some((prev) => prev.id === o.id))
+
+        if (newlyAdded.length > 0) {
+          const ids = new Set(newlyAdded.map((o) => o.id))
+          setNewOrderIds(ids)
+          setTimeout(() => setNewOrderIds(new Set()), 4000)
+        }
+
+        setOrders(
+          items.map((item) => ({
+            ...item,
+            rawData: typeof item.rawData === 'string' ? JSON.parse(item.rawData) : item.rawData,
+          }))
+        )
       },
-      error: (err) => console.error('observeQuery error', err),
     })
+
     return () => sub.unsubscribe()
-  }, [])
+  }, [orders])
 
   return (
     <div className='container max-w-4xl py-8'>
@@ -46,7 +58,10 @@ export default function OrdersPage() {
             const recipient = fulfillment?.recipient
 
             return (
-              <Card key={order.id}>
+              <Card
+                key={order.id}
+                className={cn('transition-all border', newOrderIds.has(order.id) && 'border-yellow-500 animate-pulse')}
+              >
                 <CardContent className='p-4 space-y-2'>
                   <div className='flex justify-between'>
                     <div>
