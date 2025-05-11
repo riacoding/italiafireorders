@@ -52,7 +52,7 @@ import { extractReceiptItems } from './utils'
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_TOKEN
 
-const isAuth = async () => {
+export const isAuth = async () => {
   const auth = await getCurrentUserServer()
 
   if (auth.user) {

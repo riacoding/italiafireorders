@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookieBasedClient } from '@/util/amplify'
 import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
+import { isAuth } from '@/lib/ssr-actions'
 
 const client = new SquareClient({
   token: process.env.SQUARE_ACCESS_TOKEN!,
@@ -11,12 +12,13 @@ const client = new SquareClient({
 })
 
 export async function POST(req: NextRequest) {
-  console.log('SQUARE_ACCESS_TOKEN length:', process.env.SQUARE_ACCESS_TOKEN?.length)
+  //console.log('SQUARE_ACCESS_TOKEN length:', process.env.SQUARE_ACCESS_TOKEN?.length)
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
   try {
     const body = await req.json()
     const { cartItems, locationId, menuSlug } = body
 
-    const { data: ticket } = await cookieBasedClient.queries.getTicket()
+    const { data: ticket } = await cookieBasedClient.queries.getTicket({ authMode })
     console.log('cartItems', JSON.stringify(cartItems, null, 2))
     const lineItems = cartItems.map((item: any) => ({
       catalogObjectId: item.catalogVariationId,
