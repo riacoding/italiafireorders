@@ -116,6 +116,14 @@ export default function OrdersPage() {
                       </li>
                     ))}
                   </ul>
+                  <div className='pt-2'>
+                    <button
+                      className='w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl text-lg'
+                      disabled
+                    >
+                      Prepared
+                    </button>
+                  </div>
                 </CardContent>
               </Card>
             )
