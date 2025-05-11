@@ -37,7 +37,7 @@ export default function OrdersPage() {
             .sort((a, b) => {
               const aDate = new Date(a.rawData?.createdAt ?? 0).getTime()
               const bDate = new Date(b.rawData?.createdAt ?? 0).getTime()
-              return aDate - bDate // oldest to newest — flip for newest first
+              return bDate - aDate // oldest to newest — flip for newest first
             })
         )
       },
