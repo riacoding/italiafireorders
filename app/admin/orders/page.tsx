@@ -70,11 +70,11 @@ export default function OrdersPage() {
                 className={cn('transition-all border-4', newOrderIds.has(order.id) && 'border-blue-500 animate-pulse')}
               >
                 <CardContent className='p-4 space-y-2'>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-xs text-muted-foreground'>Time since order:</span>
+                    <OrderTimer createdAt={raw.createdAt!} />
+                  </div>
                   <div className='flex justify-between'>
-                    <div className='flex items-center gap-2'>
-                      <span className='text-xs text-muted-foreground'>Time since order:</span>
-                      <OrderTimer createdAt={raw.createdAt!} />
-                    </div>
                     <div>
                       <h2 className='text-lg font-semibold'>Order #{ticket}</h2>
                       <p className='text-sm text-muted-foreground'>{createdAt ? format(createdAt, 'PPpp') : '—'}</p>
