@@ -29,10 +29,16 @@ export default function OrdersPage() {
         }
 
         setOrders(
-          items.map((item) => ({
-            ...item,
-            rawData: typeof item.rawData === 'string' ? JSON.parse(item.rawData) : item.rawData,
-          }))
+          items
+            .map((item) => ({
+              ...item,
+              rawData: typeof item.rawData === 'string' ? JSON.parse(item.rawData) : item.rawData,
+            }))
+            .sort((a, b) => {
+              const aDate = new Date(a.rawData?.createdAt ?? 0).getTime()
+              const bDate = new Date(b.rawData?.createdAt ?? 0).getTime()
+              return aDate - bDate // oldest to newest — flip for newest first
+            })
         )
       },
     })
