@@ -125,6 +125,96 @@ export type SquareModifierList = {
   }
 }
 
+export type SquareOrder = {
+  id: string
+  locationId: string
+  referenceId?: string
+  state?: 'OPEN' | 'COMPLETED' | string
+  createdAt?: string
+  updatedAt?: string
+  lineItems?: Array<{
+    uid: string
+    catalogObjectId: string
+    catalogVersion: string
+    quantity: string
+    name: string
+    variationName?: string
+    basePriceMoney?: Money
+    grossSalesMoney?: Money
+    totalTaxMoney?: Money
+    totalDiscountMoney?: Money
+    totalMoney?: Money
+    variationTotalPriceMoney?: Money
+    metadata?: Record<string, string>
+    appliedTaxes?: Array<{
+      uid: string
+      taxUid: string
+      appliedMoney: Money
+    }>
+    itemType?: 'ITEM' | string
+    totalServiceChargeMoney?: Money
+  }>
+  taxes?: Array<{
+    uid: string
+    name: string
+    percentage: string
+    type: string
+    scope: string
+    appliedMoney: Money
+  }>
+  fulfillments?: Array<{
+    uid: string
+    type: 'PICKUP' | string
+    state: 'PROPOSED' | 'PREPARED' | 'COMPLETED' | string
+    pickupDetails?: {
+      pickupAt?: string
+      placedAt?: string
+      note?: string
+      recipient?: {
+        displayName?: string
+        emailAddress?: string
+        phoneNumber?: string
+      }
+    }
+  }>
+  metadata?: {
+    menuSlug?: string
+    ticketNumber?: string
+  }
+  totalMoney?: Money
+  totalTaxMoney?: Money
+  totalDiscountMoney?: Money
+  totalTipMoney?: Money
+  totalServiceChargeMoney?: Money
+  netAmounts?: {
+    totalMoney?: Money
+    taxMoney?: Money
+    discountMoney?: Money
+    tipMoney?: Money
+    serviceChargeMoney?: Money
+  }
+  tenders?: Array<{
+    id: string
+    locationId: string
+    transactionId: string
+    createdAt: string
+    amountMoney: Money
+    type: string
+    paymentId: string
+  }>
+  source?: {
+    name: string
+  }
+  ticketName?: string
+  netAmountDueMoney?: Money
+  version?: number
+}
+
+type Money = {
+  amount: string | number
+  currency: string
+}
+
 export type SquareItemVariation = {
   id: string
   type: 'ITEM_VARIATION'
