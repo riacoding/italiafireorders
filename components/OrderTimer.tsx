@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 export default function OrderTimer({
   createdAt,
   threshold = 10 * 60,
+  statusLevel = 'normal',
 }: {
   createdAt: string
   threshold?: number // in seconds
+  statusLevel?: 'normal' | 'warning' | 'urgent'
 }) {
   const [age, setAge] = useState<number>(() => Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000))
 
@@ -24,7 +26,11 @@ export default function OrderTimer({
 
   return (
     <span
-      className={cn('text-sm font-mono', isLate ? 'text-red-600 animate-pulse font-bold' : 'text-muted-foreground')}
+      className={cn(
+        'text-sm font-mono',
+        statusLevel === 'warning' && 'text-yellow-600',
+        statusLevel === 'urgent' && 'text-red-600 animate-pulse'
+      )}
     >
       {minutes}:{seconds.toString().padStart(2, '0')}
     </span>
