@@ -145,7 +145,7 @@ export async function updateSquareOrder(
       idempotencyKey: randomUUID(),
 
       order: {
-        version: version + 1,
+        version: version,
         locationId: locationId,
         fulfillments: [
           {
