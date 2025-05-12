@@ -132,7 +132,7 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
 }
 
 export async function updateSquareOrder(orderId: string, locationId: string, status: FulfillmentState) {
-  console.log(`Updating order ${orderId} at Location:${locationId} to ${status.state}`)
+  console.log(`Updating order ${orderId} at Location:${locationId} to ${status.state}`, SQUARE_TOKEN)
   try {
     await client.orders.update({
       orderId,
