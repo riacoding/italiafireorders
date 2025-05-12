@@ -132,20 +132,25 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
 }
 
 export async function updateSquareOrder(orderId: string, locationId: string, status: FulfillmentState) {
-  await client.orders.update({
-    orderId,
-    idempotencyKey: randomUUID(),
+  console.log(`Updating order ${orderId} at Location:${locationId} to ${status.state}`)
+  try {
+    await client.orders.update({
+      orderId,
+      idempotencyKey: randomUUID(),
 
-    order: {
-      locationId: locationId,
-      fulfillments: [
-        {
-          type: 'PICKUP',
-          state: status.state,
-        },
-      ],
-    },
-  })
+      order: {
+        locationId: locationId,
+        fulfillments: [
+          {
+            type: 'PICKUP',
+            state: status.state,
+          },
+        ],
+      },
+    })
+  } catch (err) {
+    console.log(err)
+  }
 }
 
 export async function getSquareItemDetail(itemId: string) {
