@@ -49,6 +49,9 @@ export async function POST(req: NextRequest) {
         locationId,
         referenceId: ticket?.ticketNumber,
         ticketName: ticket?.ticketNumber,
+        source: {
+          name: 'Web Order',
+        },
         lineItems,
         taxes: [
           {
