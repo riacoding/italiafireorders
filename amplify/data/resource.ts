@@ -12,14 +12,18 @@ const schema = a
       .model({
         referenceId: a.string(),
         orderId: a.string(),
-        locationId: a.string(),
+        locationId: a.string().required(),
         status: a.string(), // "OPEN", "COMPLETED", etc.
         totalMoney: a.integer(),
         fulfillmentStatus: a.string(),
         rawData: a.json(),
       })
       .secondaryIndexes((index) => [index('referenceId')])
-      .authorization((allow) => [allow.guest().to(['read']), allow.authenticated().to(['read'])]),
+      .authorization((allow) => [
+        allow.guest().to(['read']),
+        allow.authenticated().to(['read']),
+        allow.groups(['admin']),
+      ]),
     TicketCounter: a
       .model({
         id: a.id().required(),
