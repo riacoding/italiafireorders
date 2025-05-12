@@ -177,7 +177,7 @@ export async function updateAmplifyOrder(order: SquareOrder, newState: Fulfillme
     const { data, errors } = await cookieBasedClient.models.Order.update({
       id: order.id,
       fulfillmentStatus: newState.state,
-      rawData: sanitizeBigInts(order),
+      rawData: JSON.stringify(sanitizeBigInts(order)),
     })
 
     if (errors) {
