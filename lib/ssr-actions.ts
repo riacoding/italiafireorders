@@ -53,7 +53,7 @@ import { SquareClient } from 'square'
 import { randomUUID } from 'crypto'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
-const SQUARE_TOKEN = process.env.SQUARE_TOKEN
+const SQUARE_TOKEN = process.env.SQUARE_ACCESS_TOKEN
 
 const client = new SquareClient({
   token: SQUARE_TOKEN,
