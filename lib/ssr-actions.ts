@@ -132,31 +132,36 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
   return data[0]
 }
 
-export async function updateSquareOrder(
-  orderId: string,
-  version: number,
-  locationId: string,
-  status: FulfillmentState
-) {
-  console.log(`Updating order ${orderId} at Location:${locationId} to ${status.state}`, SQUARE_TOKEN)
+export async function updateSquareOrder(orderId: string, locationId: string, newState: FulfillmentState) {
+  console.log(`Updating order ${orderId} at Location:${locationId} to ${newState.state}`)
+
   try {
+    // Step 1: Fetch existing order
+    const { order } = await client.orders.get({ orderId })
+
+    if (!order || !order.fulfillments || order.fulfillments.length !== 1) {
+      throw new Error(`Unexpected fulfillment state: ${JSON.stringify(order?.fulfillments)}`)
+    }
+
+    const fulfillment = order.fulfillments[0]
+
+    // Step 2: Update the state
+    fulfillment.state = newState.state
+
+    // Step 3: Send the full fulfillment object back in the update
     await client.orders.update({
       orderId,
       idempotencyKey: randomUUID(),
-
       order: {
-        version: version,
-        locationId: locationId,
-        fulfillments: [
-          {
-            type: 'PICKUP',
-            state: status.state,
-          },
-        ],
+        version: order.version!,
+        locationId,
+        fulfillments: [fulfillment],
       },
     })
+
+    console.log(`Order ${orderId} successfully updated.`)
   } catch (err) {
-    console.log(err)
+    console.error('Failed to update Square order:', err)
   }
 }
 
