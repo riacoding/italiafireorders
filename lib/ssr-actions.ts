@@ -132,7 +132,12 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
   return data[0]
 }
 
-export async function updateSquareOrder(orderId: string, locationId: string, status: FulfillmentState) {
+export async function updateSquareOrder(
+  orderId: string,
+  version: number,
+  locationId: string,
+  status: FulfillmentState
+) {
   console.log(`Updating order ${orderId} at Location:${locationId} to ${status.state}`, SQUARE_TOKEN)
   try {
     await client.orders.update({
@@ -140,6 +145,7 @@ export async function updateSquareOrder(orderId: string, locationId: string, sta
       idempotencyKey: randomUUID(),
 
       order: {
+        version: version + 1,
         locationId: locationId,
         fulfillments: [
           {

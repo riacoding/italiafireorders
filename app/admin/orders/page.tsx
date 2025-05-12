@@ -22,7 +22,7 @@ export default function OrdersPage() {
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
 
   const handleOrder = async (order: Order) => {
-    await updateSquareOrder(order.id, order.locationId!, { state: 'PREPARED' })
+    await updateSquareOrder(order.id, order.rawData.version!, order.locationId!, { state: 'PREPARED' })
   }
 
   useEffect(() => {
