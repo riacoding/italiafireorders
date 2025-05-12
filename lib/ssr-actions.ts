@@ -54,7 +54,6 @@ import { randomUUID } from 'crypto'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_TOKEN
-const locationId = process.env.NEXT_PUBLIC_LOCATION_ID
 
 const client = new SquareClient({
   token: SQUARE_TOKEN,
@@ -132,13 +131,13 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
   return data[0]
 }
 
-export async function updateSquareOrder(orderId: string, status: FulfillmentState) {
+export async function updateSquareOrder(orderId: string, locationId: string, status: FulfillmentState) {
   await client.orders.update({
     orderId,
     idempotencyKey: randomUUID(),
 
     order: {
-      locationId: locationId!,
+      locationId: locationId,
       fulfillments: [
         {
           type: 'PICKUP',

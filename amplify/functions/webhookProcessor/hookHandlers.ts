@@ -92,7 +92,7 @@ export async function createOrder(orderId: string, eventId: string) {
 
   const { data, errors } = await amplifyClient.models.Order.create({
     id: order?.id,
-    locationId: order?.locationId,
+    locationId: order?.locationId!,
     referenceId: order?.referenceId,
     status: order?.state,
     totalMoney: amountNumber,
