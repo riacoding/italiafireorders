@@ -46,11 +46,13 @@ import {
   SafeMenuItem,
   ReceiptItem,
   FulfillmentState,
+  SquareOrder,
 } from '@/types'
 import { CloudCogIcon } from 'lucide-react'
 import { extractReceiptItems } from './utils'
 import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
+import { sanitizeBigInts } from '@/amplify/functions/webhookProcessor/util'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_ACCESS_TOKEN
@@ -149,7 +151,7 @@ export async function updateSquareOrder(orderId: string, locationId: string, new
     fulfillment.state = newState.state
 
     // Step 3: Send the full fulfillment object back in the update
-    await client.orders.update({
+    const { order: newOrder } = await client.orders.update({
       orderId,
       idempotencyKey: randomUUID(),
       order: {
@@ -159,9 +161,32 @@ export async function updateSquareOrder(orderId: string, locationId: string, new
       },
     })
 
-    console.log(`Order ${orderId} successfully updated.`)
+    console.log(`Square Order ${orderId} successfully updated.`)
+    if (!newOrder?.id) {
+      throw new Error('Updated Square order has no ID')
+    }
+
+    await updateAmplifyOrder(newOrder as SquareOrder, newState)
   } catch (err) {
     console.error('Failed to update Square order:', err)
+  }
+}
+
+export async function updateAmplifyOrder(order: SquareOrder, newState: FulfillmentState): Promise<void> {
+  try {
+    const { data, errors } = await cookieBasedClient.models.Order.update({
+      id: order.id,
+      fulfillmentStatus: newState.state,
+      rawData: sanitizeBigInts(order),
+    })
+
+    if (errors) {
+      console.error('Amplify update errors:', errors)
+    } else {
+      console.log(`Amplify order ${order.id} updated to ${newState.state}`)
+    }
+  } catch (err) {
+    console.log(err)
   }
 }
 
