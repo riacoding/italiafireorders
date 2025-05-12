@@ -11,9 +11,10 @@ import { format } from 'date-fns'
 type Props = {
   order: Order
   newOrderIds: Set<string>
+  handlePrepared: (order: Order) => void
 }
 
-export default function OrderCard({ order, newOrderIds }: Props) {
+export default function OrderCard({ order, newOrderIds, handlePrepared }: Props) {
   const age = useOrderAge(order.createdAt ?? '')
   const raw = order.rawData
   const ticket = raw?.metadata?.ticketNumber ?? order.referenceId
@@ -75,6 +76,7 @@ export default function OrderCard({ order, newOrderIds }: Props) {
         </ul>
         <div className='pt-2'>
           <Button
+            onClick={() => handlePrepared(order)}
             className={cn(
               'w-full mt-4 text-lg py-6 rounded-xl',
               statusLevel === 'warning' && 'bg-yellow-500 hover:bg-yellow-600',

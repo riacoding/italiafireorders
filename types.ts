@@ -125,6 +125,10 @@ export type SquareModifierList = {
   }
 }
 
+export type FulfillmentState = {
+  state: 'PROPOSED' | 'RESERVED' | 'PREPARED' | 'COMPLETED' | 'FAILED'
+}
+
 export type SquareOrder = {
   id: string
   locationId: string

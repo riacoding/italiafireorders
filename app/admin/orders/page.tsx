@@ -7,11 +7,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import OrderTimer from '@/components/OrderTimer'
 import { format } from 'date-fns'
-import { SquareOrder } from '@/types'
+import { FulfillmentState, SquareOrder } from '@/types'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import useOrderAge from '@/hooks/useOrderAge'
 import OrderCard from '@/components/OrderCard'
+import { updateSquareOrder } from '@/lib/ssr-actions'
 
 const client = generateClient<Schema>()
 export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
@@ -19,6 +20,10 @@ export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
+
+  const handleOrder = async (order: Order) => {
+    await updateSquareOrder(order.id, { state: 'PREPARED' })
+  }
 
   useEffect(() => {
     const sub = client.models.Order.observeQuery().subscribe({
@@ -60,7 +65,7 @@ export default function OrdersPage() {
       ) : (
         <div className='space-y-4'>
           {orders.map((order) => {
-            return <OrderCard key={order.id} order={order} newOrderIds={newOrderIds} />
+            return <OrderCard key={order.id} order={order} newOrderIds={newOrderIds} handlePrepared={handleOrder} />
           })}
         </div>
       )}

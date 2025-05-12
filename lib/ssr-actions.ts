@@ -45,12 +45,20 @@ import {
   RemoveFunctions,
   SafeMenuItem,
   ReceiptItem,
+  FulfillmentState,
 } from '@/types'
 import { CloudCogIcon } from 'lucide-react'
 import { extractReceiptItems } from './utils'
+import { SquareClient } from 'square'
+import { randomUUID } from 'crypto'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_TOKEN
+const locationId = process.env.NEXT_PUBLIC_LOCATION_ID
+
+const client = new SquareClient({
+  token: SQUARE_TOKEN,
+})
 
 export const isAuth = async () => {
   const auth = await getCurrentUserServer()
@@ -122,6 +130,23 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
     throw new Error(errors.map((e) => e.message).join(', '))
   }
   return data[0]
+}
+
+export async function updateSquareOrder(orderId: string, status: FulfillmentState) {
+  await client.orders.update({
+    orderId,
+    idempotencyKey: randomUUID(),
+
+    order: {
+      locationId: locationId!,
+      fulfillments: [
+        {
+          type: 'PICKUP',
+          state: status.state,
+        },
+      ],
+    },
+  })
 }
 
 export async function getSquareItemDetail(itemId: string) {
