@@ -49,13 +49,14 @@ import {
 } from '@/types'
 import { CloudCogIcon } from 'lucide-react'
 import { extractReceiptItems } from './utils'
-import { SquareClient } from 'square'
+import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_ACCESS_TOKEN
 
 const client = new SquareClient({
+  environment: SquareEnvironment.Sandbox,
   token: SQUARE_TOKEN,
 })
 
