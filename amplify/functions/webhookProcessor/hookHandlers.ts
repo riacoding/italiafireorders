@@ -189,6 +189,11 @@ export async function updateOrder(orderId: string, eventId?: string) {
       throw new Error(errors.map((e) => e.message).join(', '))
     }
 
+    if (!data || data.length === 0) {
+      console.error(`❌ [${eventId}] No phone found for ticket ${order.ticketName}`)
+      throw new Error('No phone found for ticket')
+    }
+
     const phone = data[0]
 
     console.log(`📞 Sending SMS with twilio from ${phone.id}`)
@@ -199,7 +204,7 @@ export async function updateOrder(orderId: string, eventId?: string) {
 }
 
 async function sendOrderReadyText(phone: string, ticket: string) {
-  const orderNumber = ticket.split('-')[1] // '008'
+  const orderNumber = ticket.split('-')[1]
   const message = `🎉 Your ItaliaFire order #${orderNumber} is ready! Pick it up now.`
 
   await twilioClient.messages.create({
