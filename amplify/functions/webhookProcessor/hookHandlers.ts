@@ -199,7 +199,8 @@ export async function updateOrder(orderId: string, eventId?: string) {
 }
 
 async function sendOrderReadyText(phone: string, ticket: string) {
-  const message = `🎉 Your order #${ticket} is ready! Pick it up now.`
+  const orderNumber = ticket.split('-')[1] // '008'
+  const message = `🎉 Your ItaliaFire order #${orderNumber} is ready! Pick it up now.`
 
   await twilioClient.messages.create({
     to: phone,
