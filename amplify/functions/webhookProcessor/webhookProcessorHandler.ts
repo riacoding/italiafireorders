@@ -25,6 +25,14 @@ const handlers: Record<string, EventHandler> = {
     console.log(`🔄 Handling order.fulfillment.updated: [${eventId}] ${JSON.stringify(data, null, 2)}`)
     await fulfillmentUpdated(data.object.order_fulfillment_updated, eventId)
   },
+
+  'payment.created': async (data, eventId) => {
+    console.log(`🔄 Handling payment.created: [${eventId}] ${JSON.stringify(data, null, 2)}`)
+  },
+
+  'payment.updated': async (data, eventId) => {
+    console.log(`🔄 Handling payment.updated: [${eventId}] ${JSON.stringify(data, null, 2)}`)
+  },
 }
 
 export const handler: SQSHandler = async (event, context) => {
