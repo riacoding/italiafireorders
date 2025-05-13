@@ -12,17 +12,17 @@ type EventHandler = (data: any, eventId: string) => Promise<void>
 
 const handlers: Record<string, EventHandler> = {
   'order.created': async (data, eventId) => {
-    console.log('🆕 Handling order.created:', JSON.stringify(data, null, 2))
+    console.log(`🆕 Handling order.created: [${eventId}] ${JSON.stringify(data, null, 2)}`)
     await createOrder(data.id, eventId)
   },
 
   'order.updated': async (data, eventId) => {
-    console.log(`🔄 Handling order.updated: [${eventId}]`)
+    console.log(`🔄 Handling order.updated: [${eventId}] ${JSON.stringify(data, null, 2)}`)
     await updateOrder(data.id, eventId)
   },
 
   'order.fulfillment.updated': async (data, eventId) => {
-    console.log('🔄 Handling order.fulfillment.updated:', JSON.stringify(data, null, 2))
+    console.log(`🔄 Handling order.fulfillment.updated: [${eventId}] ${JSON.stringify(data, null, 2)}`)
     await fulfillmentUpdated(data.object.order_fulfillment_updated, eventId)
   },
 }
