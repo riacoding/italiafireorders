@@ -7,7 +7,7 @@ export const webhookProcessor = defineFunction({
     SQUARE_WEBHOOK_SECRET: secret('SQUARE_WEBHOOK_SECRET'),
     TWILIO_ACCOUNT_SID: secret('TWILIO_ACCOUNT_SID'),
     TWILIO_AUTH_TOKEN: secret('TWILIO_AUTH_TOKEN'),
-    TWILIO_FROM: secret('TWILIO_PHONE_NUMBER'),
+    TWILIO_FROM: secret('TWILIO_FROM'),
   },
   resourceGroupName: 'data',
 })
