@@ -137,7 +137,7 @@ export async function fulfillmentUpdated(update: SquareFulfillmentUpdate, eventI
 
 export async function updateOrder(orderId: string, eventId?: string) {
   const { order, errors: sqErrors } = await client.orders.get({ orderId })
-
+  console.log(`🆕 [${eventId}] Handling order.updated: ${JSON.stringify(order)}`)
   if (sqErrors) {
     console.error(`❌ [${eventId}] Failed to fetch order ${orderId}:`, JSON.stringify(sqErrors))
     throw new Error(sqErrors.map((e) => e.detail).join(', '))
