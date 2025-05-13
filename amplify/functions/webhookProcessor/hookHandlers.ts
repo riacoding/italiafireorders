@@ -83,28 +83,6 @@ export async function createOrder(orderId: string, eventId: string) {
   const amount = order?.totalMoney?.amount
   const amountNumber = typeof amount === 'bigint' ? Number(amount) : amount
 
-  let fulfillmentStatus = 'PROPOSED'
-  if (order?.ticketName && order?.fulfillments && order?.fulfillments?.length > 0) {
-    fulfillmentStatus = order?.fulfillments[0]?.state || 'PROPOSED'
-    const phoneNumber = order.fulfillments[0].pickupDetails?.recipient?.phoneNumber
-    //create phone
-    if (phoneNumber) {
-      const { data, errors } = await amplifyClient.models.Phone.create(
-        {
-          phone: phoneNumber,
-          ticketNumber: order?.ticketName,
-          optIn: true,
-        },
-        { authMode: 'identityPool' }
-      )
-
-      if (errors && errors.length > 0) {
-        console.error(`❌ [${eventId}] Error fetching order phone:`, JSON.stringify(errors))
-        throw new Error(errors.map((e) => e.message).join(', '))
-      }
-    }
-  }
-
   const { data: existing } = await amplifyClient.models.Order.get({ id: orderId })
   if (existing?.id) {
     console.log('Order already exists. Skipping creation.')
@@ -117,7 +95,6 @@ export async function createOrder(orderId: string, eventId: string) {
     referenceId: order?.referenceId,
     status: order?.state,
     totalMoney: amountNumber,
-    fulfillmentStatus: fulfillmentStatus,
     rawData: JSON.stringify(sanitizeBigInts(order)),
   })
 
@@ -154,6 +131,30 @@ export async function updateOrder(orderId: string, eventId?: string) {
 
   const amount = order.totalMoney?.amount
   const amountNumber = typeof amount === 'bigint' ? Number(amount) : amount
+
+  let fulfillmentStatus = 'PROPOSED'
+  if (order?.ticketName && order?.fulfillments && order?.fulfillments?.length > 0) {
+    fulfillmentStatus = order?.fulfillments[0]?.state || 'PROPOSED'
+    const phoneNumber = order.fulfillments[0].pickupDetails?.recipient?.phoneNumber
+    //create phone
+    if (phoneNumber) {
+      const { data, errors } = await amplifyClient.models.Phone.create(
+        {
+          phone: phoneNumber,
+          ticketNumber: order?.ticketName,
+          optIn: true,
+        },
+        { authMode: 'identityPool' }
+      )
+
+      console.log(`📞 amplify phone create ${data?.id || 'none'}`)
+
+      if (errors && errors.length > 0) {
+        console.error(`❌ [${eventId}] Error fetching order phone:`, JSON.stringify(errors))
+        throw new Error(errors.map((e) => e.message).join(', '))
+      }
+    }
+  }
 
   const { data: existing, errors: getErrors } = await amplifyClient.models.Order.get({ id: orderId })
   if (getErrors && getErrors.length > 0) {
