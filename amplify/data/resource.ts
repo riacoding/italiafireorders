@@ -43,6 +43,17 @@ const schema = a
       .secondaryIndexes((index) => [index('squareItemId')])
       .authorization((allow) => [allow.groups(['admin']), allow.guest().to(['read'])]),
 
+    Phone: a
+      .model({
+        id: a.id().required(),
+        phone: a.string().required(),
+        ticketNumber: a.string().required(),
+        optIn: a.boolean().required(),
+        expiresAt: a.integer(), // TTL field
+      })
+      .secondaryIndexes((index) => [index('ticketNumber')])
+      .authorization((allow) => [allow.groups(['admin'])]),
+
     Menu: a
       .model({
         id: a.id().required(),

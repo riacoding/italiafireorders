@@ -9,6 +9,10 @@ import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtim
 import { env } from '$amplify/env/webhookProcessorHandler' // replace with your function name
 import { sanitizeBigInts } from './util'
 import { SquareFulfillmentUpdate } from './types'
+import twilio from 'twilio'
+
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
+const TWILIO_FROM = process.env.TWILIO_FROM! // your Twilio number or messaging service SID
 
 const SQUARE_WEBHOOK_SECRET = process.env.SQUARE_WEBHOOK_SECRET!
 const WEBHOOK_URL = process.env.WEBHOOK_URL!
@@ -80,8 +84,22 @@ export async function createOrder(orderId: string, eventId: string) {
   const amountNumber = typeof amount === 'bigint' ? Number(amount) : amount
 
   let fulfillmentStatus = 'PROPOSED'
-  if (order?.fulfillments && order?.fulfillments?.length > 0) {
+  if (order?.ticketName && order?.fulfillments && order?.fulfillments?.length > 0) {
     fulfillmentStatus = order?.fulfillments[0]?.state || 'PROPOSED'
+    const phoneNumber = order.fulfillments[0].pickupDetails?.recipient?.phoneNumber
+    //create phone
+    if (phoneNumber) {
+      const { data, errors } = await amplifyClient.models.Phone.create({
+        phone: phoneNumber,
+        ticketNumber: order?.ticketName,
+        optIn: true,
+      })
+
+      if (errors && errors.length > 0) {
+        console.error(`❌ [${eventId}] Error fetching order phone:`, JSON.stringify(errors))
+        throw new Error(errors.map((e) => e.message).join(', '))
+      }
+    }
   }
 
   const { data: existing } = await amplifyClient.models.Order.get({ id: orderId })
@@ -156,5 +174,30 @@ export async function updateOrder(orderId: string, eventId?: string) {
     throw new Error(errors.map((e) => e.message).join(', '))
   }
 
+  if (order.ticketName && order.fulfillments && order?.fulfillments[0].state === 'PREPARED') {
+    const { data: Phone, errors } = await amplifyClient.models.Phone.listPhoneByTicketNumber({
+      ticketNumber: order.ticketName,
+    })
+
+    if (errors && errors.length > 0) {
+      console.error(`❌ [${eventId}] Error fetching order phone:`, JSON.stringify(errors))
+      throw new Error(errors.map((e) => e.message).join(', '))
+    }
+
+    await sendOrderReadyText('+14083682841', order.ticketName)
+  }
+
   console.log(`✅ [${eventId}] Order updated: ${data?.id}`)
+}
+
+async function sendOrderReadyText(phone: string, ticket: string) {
+  const message = `🎉 Your order #${ticket} is ready! Pick it up now.`
+
+  await twilioClient.messages.create({
+    to: phone,
+    from: TWILIO_FROM,
+    body: message,
+  })
+
+  console.log(`Text sent to ${phone} for ticket ${ticket}`)
 }
