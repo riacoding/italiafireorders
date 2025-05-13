@@ -177,16 +177,21 @@ export async function updateOrder(orderId: string, eventId?: string) {
 
   if (order.ticketName && order.fulfillments && order?.fulfillments[0].state === 'PREPARED') {
     console.log('📞 fetching Phone from Amplify')
-    const { data: Phone, errors } = await amplifyClient.models.Phone.listPhoneByTicketNumber({
-      ticketNumber: order.ticketName,
-    })
+    const { data, errors } = await amplifyClient.models.Phone.listPhoneByTicketNumber(
+      {
+        ticketNumber: order.ticketName,
+      },
+      { authMode: 'identityPool' }
+    )
 
     if (errors && errors.length > 0) {
       console.error(`❌ [${eventId}] Error fetching order phone:`, JSON.stringify(errors))
       throw new Error(errors.map((e) => e.message).join(', '))
     }
 
-    console.log('📞 Sending SMS with twilio')
+    const phone = data[0]
+
+    console.log(`📞 Sending SMS with twilio from ${phone.id}`)
     await sendOrderReadyText('+14083682841', order.ticketName)
   }
 
