@@ -124,13 +124,27 @@ export async function updateOrder(orderId: string, eventId?: string) {
     throw new Error(sqErrors.map((e) => e.detail).join(', '))
   }
 
-  if (!order?.id) {
-    console.warn(`⚠️ [${eventId}] No order returned for ID ${orderId}`)
-    return
-  }
-
   const amount = order.totalMoney?.amount
   const amountNumber = typeof amount === 'bigint' ? Number(amount) : amount
+
+  if (!order?.id) {
+    console.warn(`⏳ [${eventId}] Order not found locally. Creating stub.`)
+    const { data, errors } = await amplifyClient.models.Order.create({
+      id: order.id,
+      locationId: order.locationId!,
+      referenceId: order.referenceId,
+      status: order.state,
+      totalMoney: amountNumber,
+      rawData: JSON.stringify(order),
+    })
+
+    if (errors?.length) {
+      console.error(`❌ [${eventId}] Error creating stub order:`, JSON.stringify(errors))
+      throw new Error(errors.map((e) => e.message).join(', '))
+    }
+
+    console.log(`✅ [${eventId}] Stub order created during update flow: ${data?.id}`)
+  }
 
   let fulfillmentStatus = 'PROPOSED'
   if (order?.ticketName && order?.fulfillments && order?.fulfillments?.length > 0) {
@@ -144,7 +158,7 @@ export async function updateOrder(orderId: string, eventId?: string) {
           ticketNumber: order?.ticketName,
           optIn: true,
         },
-        { authMode: 'identityPool' }
+        { authMode: 'iam' }
       )
 
       console.log(`📞 amplify phone create ${data?.id || 'none'}`)
