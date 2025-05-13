@@ -176,6 +176,7 @@ export async function updateOrder(orderId: string, eventId?: string) {
   }
 
   if (order.ticketName && order.fulfillments && order?.fulfillments[0].state === 'PREPARED') {
+    console.log('📞 fetching Phone from Amplify')
     const { data: Phone, errors } = await amplifyClient.models.Phone.listPhoneByTicketNumber({
       ticketNumber: order.ticketName,
     })
@@ -185,6 +186,7 @@ export async function updateOrder(orderId: string, eventId?: string) {
       throw new Error(errors.map((e) => e.message).join(', '))
     }
 
+    console.log('📞 Sending SMS with twilio')
     await sendOrderReadyText('+14083682841', order.ticketName)
   }
 
