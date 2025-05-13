@@ -89,11 +89,14 @@ export async function createOrder(orderId: string, eventId: string) {
     const phoneNumber = order.fulfillments[0].pickupDetails?.recipient?.phoneNumber
     //create phone
     if (phoneNumber) {
-      const { data, errors } = await amplifyClient.models.Phone.create({
-        phone: phoneNumber,
-        ticketNumber: order?.ticketName,
-        optIn: true,
-      })
+      const { data, errors } = await amplifyClient.models.Phone.create(
+        {
+          phone: phoneNumber,
+          ticketNumber: order?.ticketName,
+          optIn: true,
+        },
+        { authMode: 'identityPool' }
+      )
 
       if (errors && errors.length > 0) {
         console.error(`❌ [${eventId}] Error fetching order phone:`, JSON.stringify(errors))
