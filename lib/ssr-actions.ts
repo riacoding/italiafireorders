@@ -172,6 +172,41 @@ export async function updateSquareOrder(orderId: string, locationId: string, new
   }
 }
 
+export async function updateOrderContact(phone: string, ticketNumber: string): Promise<void> {
+  const { data: Phones, errors: phoneErrors } = await cookieBasedClient.models.Phone.listPhoneByTicketNumber(
+    {
+      ticketNumber,
+    },
+    { authMode: 'identityPool' }
+  )
+
+  if (!Phones.length) {
+    console.warn('No matching phone record found')
+    return
+  }
+
+  if (phoneErrors) {
+    console.error('Amplify fetch phone errors:', phoneErrors)
+  }
+
+  const id = Phones[0].id
+
+  const { data: orderPhone, errors } = await cookieBasedClient.models.Phone.update(
+    {
+      id,
+      phone: phone,
+      ticketNumber: ticketNumber,
+    },
+    { authMode: 'identityPool' }
+  )
+
+  if (errors) {
+    console.error('Amplify update errors:', errors)
+  } else {
+    console.log(`Amplify phone ${orderPhone?.id} updated `)
+  }
+}
+
 export async function updateAmplifyOrder(order: SquareOrder, newState: FulfillmentState): Promise<void> {
   try {
     const { data, errors } = await cookieBasedClient.models.Order.update({

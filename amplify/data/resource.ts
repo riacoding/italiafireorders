@@ -52,7 +52,7 @@ const schema = a
         expiresAt: a.integer(), // TTL field
       })
       .secondaryIndexes((index) => [index('ticketNumber')])
-      .authorization((allow) => [allow.groups(['admin'])]),
+      .authorization((allow) => [allow.groups(['admin']), allow.guest(), allow.authenticated()]),
 
     Menu: a
       .model({

@@ -2,14 +2,20 @@
 
 import { useCart } from '@/components/CartContext'
 import { ReceiptSimpleList } from '@/components/ReceiptItemList'
-import { getSquareOrderByOrderNumber } from '@/lib/ssr-actions'
+import { getSquareOrderByOrderNumber, updateOrderContact } from '@/lib/ssr-actions'
 import { ReceiptItem } from '@/types'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 export default function ThankYouClient() {
   const searchParams = useSearchParams()
   const [order, setOrder] = useState<ReceiptItem[] | null>(null)
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+
   const [isLoading, setIsLoading] = useState(true)
   const orderNumber = searchParams.get('order') || 'N/A'
   const { clearCart } = useCart()
@@ -28,6 +34,11 @@ export default function ThankYouClient() {
     fetchOrder()
   }, [])
 
+  const handleContactSubmit = async () => {
+    await updateOrderContact(phone, orderNumber)
+    setSubmitted(true)
+  }
+
   return (
     <div className='w-full flex items-center justify-center'>
       <div className='w-full max-w-md flex items-center justify-center bg-gray-100 p-4'>
@@ -42,6 +53,17 @@ export default function ThankYouClient() {
             {order && order.length > 0 && <ReceiptSimpleList items={order} />}
           </div>
         </div>
+        {!submitted && (
+          <div className='mt-6 text-left space-y-3'>
+            <h2 className='text-lg font-semibold'>Want a text when your order is ready?</h2>
+            <Input placeholder='Phone number' value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Button onClick={handleContactSubmit} className='mt-2' disabled={!phone}>
+              Submit Info
+            </Button>
+          </div>
+        )}
+
+        {submitted && <p className='mt-6 text-green-600'>✅ You’ll get a text when it’s ready!</p>}
       </div>
     </div>
   )
