@@ -16,9 +16,9 @@ export default function CartIcon() {
   }, [items])
 
   return (
-    <div className='relative'>
+    <div className='relative flex items-center'>
       <button onClick={() => router.push('/cart')} aria-label='Cart' className='hover:text-gray-600 transition'>
-        <ShoppingCart className='w-6 h-6' />
+        <ShoppingCart className='w-8 h-8' />
       </button>
       {itemCount > 0 && (
         <span className='absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center'>

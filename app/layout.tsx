@@ -6,6 +6,7 @@ import Providers from '@/components/Providers'
 import CartIcon from '@/components/CartIcon'
 import Image from 'next/image'
 import Link from 'next/link'
+import MobileMenu from '@/components/MobileMenu'
 
 export const metadata: Metadata = {
   title: 'ItaliaFire',
@@ -26,9 +27,12 @@ export default function RootLayout({
           {/* Header */}
           <header className='bg-white border-b border-gray-200 shadow-sm p-4 flex justify-between items-center'>
             <Link href='/'>
-              <Image src='/ItaliaFire.png' alt='ItaliaFire Logo' width={200} height={75} />
+              <Image priority src='/ItaliaFire.png' alt='ItaliaFire Logo' width={211} height={120} />
             </Link>
-            <CartIcon />
+            <div className='flex align-center justify-center  gap-5'>
+              <CartIcon />
+              <MobileMenu isLoggedIn={true} />
+            </div>
           </header>
 
           {/* Main content */}

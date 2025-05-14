@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import useOrderAge from '@/hooks/useOrderAge'
 import OrderCard from '@/components/OrderCard'
 import { updateSquareOrder } from '@/lib/ssr-actions'
+import { useAuthenticator } from '@aws-amplify/ui-react'
 
 const client = generateClient<Schema>()
 export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
@@ -20,10 +21,6 @@ export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
-
-  const handleOrder = async (order: Order) => {
-    await updateSquareOrder(order.id, order.locationId!, { state: 'PREPARED' })
-  }
 
   useEffect(() => {
     const sub = client.models.Order.observeQuery().subscribe({
@@ -52,9 +49,12 @@ export default function OrdersPage() {
         )
       },
     })
-
     return () => sub.unsubscribe()
   }, [orders])
+
+  const handleOrder = async (order: Order) => {
+    await updateSquareOrder(order.id, order.locationId!, { state: 'PREPARED' })
+  }
 
   return (
     <div className='container max-w-4xl py-8'>

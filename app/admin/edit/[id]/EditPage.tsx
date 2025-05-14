@@ -21,6 +21,7 @@ import {
 } from '@/lib/ssr-actions'
 import { ParamValue } from 'next/dist/server/request/params'
 import Link from 'next/link'
+import { Pencil } from 'lucide-react'
 
 type FormValues = {
   name: string
@@ -173,12 +174,12 @@ export default function EditPage({ id, items }: EditPageParams) {
                 return (
                   <label key={item.id} className='flex items-center space-x-2'>
                     <input type='checkbox' checked={isSelected} onChange={() => toggle(item.id)} />
-                    <span>{item.item_data.name}</span>
                     {isSelected && menuItem?.id && (
                       <Link href={`/admin/edit/menuItem/${menuItem.id}`}>
-                        <Button variant='link'>Edit</Button>
+                        <Pencil className='w-4 h-4 text-muted-foreground hover:text-blue-600' />
                       </Link>
                     )}
+                    <span>{item.item_data.name}</span>
                   </label>
                 )
               })}
