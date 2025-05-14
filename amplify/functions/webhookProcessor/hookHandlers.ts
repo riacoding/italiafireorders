@@ -202,7 +202,7 @@ export async function updateOrder(orderId: string, eventId?: string) {
     const phone = data[0]
 
     console.log(`📞 Sending SMS with twilio from ${phone.id}`)
-    await sendOrderReadyText('+14083682841', order.ticketName)
+    await sendOrderReadyText(phone.phone, order.ticketName)
   }
 
   console.log(`✅ [${eventId}] Order updated: ${data?.id}`)
