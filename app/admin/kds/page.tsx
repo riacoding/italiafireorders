@@ -50,7 +50,7 @@ export default function OrdersPage() {
       },
     })
     return () => sub.unsubscribe()
-  }, [orders])
+  }, [])
 
   const handleOrder = async (order: Order) => {
     await updateSquareOrder(order.id, order.locationId!, { state: 'PREPARED' })
