@@ -40,9 +40,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'text/xml' },
-    body: `<Response><Message>
-      ${reply}
-      <Media>https://https://main.d1tk6naxmgg6kb.amplifyapp.com/ItaliaFire.png</Media>
-    </Message></Response>`,
+    body: `<Response><Message>${reply}</Message></Response>`,
   }
 }
