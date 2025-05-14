@@ -151,23 +151,10 @@ export async function updateOrder(orderId: string, eventId?: string) {
     fulfillmentStatus = order?.fulfillments[0]?.state || 'PROPOSED'
     const phoneNumber = order.fulfillments[0].pickupDetails?.recipient?.phoneNumber
     //create phone
-    if (phoneNumber) {
-      const { data, errors } = await amplifyClient.models.Phone.create(
-        {
-          phone: phoneNumber,
-          ticketNumber: order?.ticketName,
-          optIn: true,
-        },
-        { authMode: 'iam' }
-      )
-
-      console.log(`📞 amplify phone create ${data?.id || 'none'}`)
-
-      if (errors && errors.length > 0) {
-        console.error(`❌ [${eventId}] Error fetching order phone:`, JSON.stringify(errors))
-        throw new Error(errors.map((e) => e.message).join(', '))
-      }
-    }
+    await upsertPhoneByTicketNumber({
+      phone: phoneNumber,
+      ticketNumber: order.ticketName,
+    })
   }
 
   const { data: existing, errors: getErrors } = await amplifyClient.models.Order.get({ id: orderId })
@@ -232,4 +219,42 @@ async function sendOrderReadyText(phone: string, ticket: string) {
   })
 
   console.log(`Text sent to ${phone} for ticket ${ticket}`)
+}
+
+async function upsertPhoneByTicketNumber({ ticketNumber, phone }: { ticketNumber: string; phone: string }) {
+  const { data: existing, errors: fetchErrors } = await amplifyClient.models.Phone.listPhoneByTicketNumber(
+    { ticketNumber },
+    { authMode: 'iam' }
+  )
+
+  if (fetchErrors?.length) {
+    console.error('Error looking up phone:', fetchErrors)
+    throw new Error(fetchErrors.map((e) => e.message).join(', '))
+  }
+
+  if (existing.length > 0) {
+    const id = existing[0].id
+    const { data, errors: updateErrors } = await amplifyClient.models.Phone.update(
+      {
+        id,
+        phone,
+        ticketNumber,
+        optIn: true,
+      },
+      { authMode: 'iam' }
+    )
+    console.log(`📞 Updated phone ${id}`)
+    return data
+  } else {
+    const { data, errors: createErrors } = await amplifyClient.models.Phone.create(
+      {
+        phone,
+        ticketNumber,
+        optIn: true,
+      },
+      { authMode: 'iam' }
+    )
+    console.log(`📞 Created phone ${data?.id}`)
+    return data
+  }
 }

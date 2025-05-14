@@ -173,31 +173,37 @@ export async function updateSquareOrder(orderId: string, locationId: string, new
 }
 
 export async function updateOrderContact(phone: string, ticketNumber: string): Promise<void> {
-  const { data: Phones, errors: phoneErrors } = await cookieBasedClient.models.Phone.listPhoneByTicketNumber(
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '') // "20240501"
+  const ticket = `${today}-${ticketNumber}`
+  console.log(`Updating phone ${phone} for ticket ${ticketNumber} ${ticket}`)
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  const { data: phones, errors: phoneErrors } = await cookieBasedClient.models.Phone.listPhoneByTicketNumber(
     {
-      ticketNumber,
+      ticketNumber: ticket,
     },
-    { authMode: 'identityPool' }
+    { authMode }
   )
 
-  if (!Phones.length) {
-    console.warn('No matching phone record found')
-    return
-  }
+  console.log('listPhonesByTicketNumber', phones)
 
   if (phoneErrors) {
     console.error('Amplify fetch phone errors:', phoneErrors)
   }
 
-  const id = Phones[0].id
+  if (!phones?.length) {
+    console.warn('No matching phone record found')
+    return
+  }
+
+  const id = phones[0].id
 
   const { data: orderPhone, errors } = await cookieBasedClient.models.Phone.update(
     {
       id,
       phone: phone,
-      ticketNumber: ticketNumber,
+      ticketNumber: ticket,
     },
-    { authMode: 'identityPool' }
+    { authMode }
   )
 
   if (errors) {

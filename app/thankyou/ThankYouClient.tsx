@@ -13,7 +13,8 @@ export default function ThankYouClient() {
   const searchParams = useSearchParams()
   const [order, setOrder] = useState<ReceiptItem[] | null>(null)
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
+  const [rawPhone, setRawPhone] = useState('')
+  const formattedPhone = formatPhoneInput(rawPhone)
   const [submitted, setSubmitted] = useState(false)
 
   const [isLoading, setIsLoading] = useState(true)
@@ -35,13 +36,33 @@ export default function ThankYouClient() {
   }, [])
 
   const handleContactSubmit = async () => {
-    await updateOrderContact(phone, orderNumber)
+    await updateOrderContact(normalizePhoneForStorage(rawPhone), orderNumber)
     setSubmitted(true)
   }
 
+  // Format as (555) 555-5555 while typing
+  function formatPhoneInput(raw: string): string {
+    const cleaned = raw.replace(/\D/g, '').slice(0, 10)
+    const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/)
+
+    if (!match) return cleaned
+
+    const [, area, prefix, line] = match
+    if (line) return `(${area}) ${prefix}-${line}`
+    if (prefix) return `(${area}) ${prefix}`
+    if (area) return `(${area}`
+    return ''
+  }
+
+  // Normalize to +15555555555 on submit
+  function normalizePhoneForStorage(formatted: string): string {
+    const digits = formatted.replace(/\D/g, '')
+    return `+1${digits.slice(0, 10)}`
+  }
+
   return (
-    <div className='w-full flex items-center justify-center'>
-      <div className='w-full max-w-md flex items-center justify-center bg-gray-100 p-4'>
+    <div className='w-full flex  items-center justify-center'>
+      <div className='w-full max-w-md flex flex-col items-center justify-center bg-gray-100 p-4'>
         <div className='w-full border-4 border-black rounded-md p-8 text-center bg-white shadow-md'>
           <h1 className='text-3xl font-bold mb-4'>Thank you</h1>
 
@@ -57,8 +78,8 @@ export default function ThankYouClient() {
           {!submitted && (
             <div className='mt-6 text-left space-y-3'>
               <h2 className='text-lg font-semibold'>Want a text when your order is ready?</h2>
-              <Input placeholder='Phone number' value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <Button onClick={handleContactSubmit} className='mt-2' disabled={!phone}>
+              <Input placeholder='Phone number' value={formattedPhone} onChange={(e) => setRawPhone(e.target.value)} />
+              <Button onClick={handleContactSubmit} className='mt-2' disabled={!rawPhone}>
                 Submit Info
               </Button>
             </div>
