@@ -4,10 +4,11 @@ import { fetchMenuWithItems } from '@/lib/fetchMenuWithItems'
 import { Metadata } from 'next'
 
 export async function generateMetadata({ params }: { params: { loc: string } }): Promise<Metadata> {
-  const { menu } = await fetchMenuWithItems(params.loc)
+  const { loc } = await params
+  const { menu } = await fetchMenuWithItems(loc)
 
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://yourdomain.com'
-  const fullUrl = `${siteUrl}/menu/${params.loc}`
+  const fullUrl = `${siteUrl}/menu/${loc}`
 
   return {
     title: menu?.name || 'View Today’s Menu',

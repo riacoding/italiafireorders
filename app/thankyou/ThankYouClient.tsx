@@ -53,17 +53,19 @@ export default function ThankYouClient() {
             {order && order.length > 0 && <ReceiptSimpleList items={order} />}
           </div>
         </div>
-        {!submitted && (
-          <div className='mt-6 text-left space-y-3'>
-            <h2 className='text-lg font-semibold'>Want a text when your order is ready?</h2>
-            <Input placeholder='Phone number' value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <Button onClick={handleContactSubmit} className='mt-2' disabled={!phone}>
-              Submit Info
-            </Button>
-          </div>
-        )}
+        <div>
+          {!submitted && (
+            <div className='mt-6 text-left space-y-3'>
+              <h2 className='text-lg font-semibold'>Want a text when your order is ready?</h2>
+              <Input placeholder='Phone number' value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Button onClick={handleContactSubmit} className='mt-2' disabled={!phone}>
+                Submit Info
+              </Button>
+            </div>
+          )}
 
-        {submitted && <p className='mt-6 text-green-600'>✅ You’ll get a text when it’s ready!</p>}
+          {submitted && <p className='mt-6 text-green-600'>✅ You’ll get a text when it’s ready!</p>}
+        </div>
       </div>
     </div>
   )
