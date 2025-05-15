@@ -49,6 +49,7 @@ const schema = a
         phone: a.string().required(),
         ticketNumber: a.string().required(),
         optIn: a.boolean().required(),
+        clientUpdated: a.boolean().default(false).required(),
         expiresAt: a.integer(), // TTL field
       })
       .secondaryIndexes((index) => [index('ticketNumber')])

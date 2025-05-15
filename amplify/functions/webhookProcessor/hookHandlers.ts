@@ -233,27 +233,46 @@ async function upsertPhoneByTicketNumber({ ticketNumber, phone }: { ticketNumber
   }
 
   if (existing.length > 0) {
-    const id = existing[0].id
+    const record = existing[0]
+
+    // ✅ Do NOT update if client already opted in manually
+    if (record.clientUpdated) {
+      console.log(`📞 Skipping update for phone ${record.id} – clientUpdated is true`)
+      return record
+    }
+
     const { data, errors: updateErrors } = await amplifyClient.models.Phone.update(
       {
-        id,
+        id: record.id,
         phone,
         ticketNumber,
-        optIn: true,
       },
       { authMode: 'iam' }
     )
-    console.log(`📞 Updated phone ${id}`)
+
+    if (updateErrors?.length) {
+      console.error('Error updating phone:', updateErrors)
+      throw new Error(updateErrors.map((e) => e.message).join(', '))
+    }
+
+    console.log(`📞 Updated phone ${record.id}`)
     return data
   } else {
     const { data, errors: createErrors } = await amplifyClient.models.Phone.create(
       {
         phone,
         ticketNumber,
-        optIn: true,
+        optIn: false,
+        clientUpdated: false,
       },
       { authMode: 'iam' }
     )
+
+    if (createErrors?.length) {
+      console.error('Error creating phone:', createErrors)
+      throw new Error(createErrors.map((e) => e.message).join(', '))
+    }
+
     console.log(`📞 Created phone ${data?.id}`)
     return data
   }

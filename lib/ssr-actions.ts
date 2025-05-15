@@ -202,6 +202,8 @@ export async function updateOrderContact(phone: string, ticketNumber: string): P
       id,
       phone: phone,
       ticketNumber: ticket,
+      clientUpdated: true,
+      optIn: true,
     },
     { authMode }
   )
