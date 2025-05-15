@@ -305,6 +305,7 @@ export async function getSquareOrderByOrderNumber(orderNumber: string): Promise<
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
 
   try {
+    console.log('fetching order:', referenceId)
     const { data, errors } = await cookieBasedClient.models.Order.listOrderByReferenceId(
       { referenceId: referenceId },
       { authMode }

@@ -202,13 +202,17 @@ export async function updateOrder(orderId: string, eventId?: string) {
     const phone = data[0]
 
     console.log(`📞 Sending SMS with twilio from ${phone.id}`)
-    await sendOrderReadyText(phone.phone, order.ticketName)
+    await sendOrderReadyText(phone.phone, phone.optIn, order.ticketName)
   }
 
   console.log(`✅ [${eventId}] Order updated: ${data?.id}`)
 }
 
-async function sendOrderReadyText(phone: string, ticket: string) {
+async function sendOrderReadyText(phone: string, optIn: boolean, ticket: string) {
+  if (!phone || !optIn) {
+    console.log('SMS not sent – phone missing or user did not opt in')
+    return
+  }
   const orderNumber = ticket.split('-')[1]
   const message = `🎉 Your ItaliaFire order #${orderNumber} is ready! Pick it up now.`
 

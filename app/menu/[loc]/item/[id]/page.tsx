@@ -1,7 +1,5 @@
 // app/menu/item/[id]/page.tsx
-
 'use client'
-
 import { useMenuItem } from '../../MenuProvider'
 import { useParams } from 'next/navigation'
 import { notFound } from 'next/navigation'
