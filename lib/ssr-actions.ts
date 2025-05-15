@@ -177,17 +177,15 @@ export async function updateOrderContact(phone: string, ticketNumber: string): P
   const ticket = `${today}-${ticketNumber}`
   console.log(`Updating phone ${phone} for ticket ${ticketNumber} ${ticket}`)
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
+
   const { data: phones, errors: phoneErrors } = await cookieBasedClient.models.Phone.listPhoneByTicketNumber(
-    {
-      ticketNumber: ticket,
-    },
+    { ticketNumber: ticket },
     { authMode }
   )
 
-  console.log('listPhonesByTicketNumber', phones)
-
-  if (phoneErrors) {
+  if (phoneErrors?.length) {
     console.error('Amplify fetch phone errors:', phoneErrors)
+    return
   }
 
   if (!phones?.length) {
@@ -195,12 +193,18 @@ export async function updateOrderContact(phone: string, ticketNumber: string): P
     return
   }
 
-  const id = phones[0].id
+  const existing = phones[0]
+
+  // 🛡️ Avoid redundant update
+  if (existing.optIn && existing.clientUpdated && existing.phone === phone) {
+    console.log(`Phone already opted in and matches — skipping update`)
+    return
+  }
 
   const { data: orderPhone, errors } = await cookieBasedClient.models.Phone.update(
     {
-      id,
-      phone: phone,
+      id: existing.id,
+      phone,
       ticketNumber: ticket,
       clientUpdated: true,
       optIn: true,
@@ -208,10 +212,10 @@ export async function updateOrderContact(phone: string, ticketNumber: string): P
     { authMode }
   )
 
-  if (errors) {
+  if (errors?.length) {
     console.error('Amplify update errors:', errors)
   } else {
-    console.log(`Amplify phone ${orderPhone?.id} updated `)
+    console.log(`📲 Phone ${orderPhone?.id} marked as clientUpdated + opted in`)
   }
 }
 
