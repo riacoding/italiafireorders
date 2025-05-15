@@ -122,7 +122,7 @@ export const fetchCurrentMenus = async () => {
 
 export const getCurrentMenu = async (locationId: string): Promise<Menu | null> => {
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
-  console.log('locationId', locationId)
+  //console.log('locationId', locationId)
   const { data, errors } = await cookieBasedClient.models.Menu.list({
     filter: { locationId: { eq: locationId }, isActive: { eq: true } },
     authMode,
@@ -568,7 +568,7 @@ export async function fetchMenuItemsWithModifiers(squareItemIds: string[]): Prom
       item: SquareItem
       modifierLists?: SquareModifierList[]
     }
-    console.log('item', item)
+    //console.log('appsync item', item)
     return {
       item,
       modifierLists: modifierLists ?? [],

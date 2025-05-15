@@ -1,11 +1,11 @@
 // app/menu/page.tsx
 import MenuDisplay from '@/components/MenuDisplay'
-import { fetchMenuWithItems } from '@/lib/fetchMenuWithItems'
+import { getCachedMenu } from '@/lib/menuCache'
 import { Metadata } from 'next'
 
 export async function generateMetadata({ params }: { params: { loc: string } }): Promise<Metadata> {
   const { loc } = await params
-  const { menu } = await fetchMenuWithItems(loc)
+  const { menu } = await getCachedMenu(loc)
 
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://yourdomain.com'
   const fullUrl = `${siteUrl}/menu/${loc}`
