@@ -39,8 +39,11 @@ export default function RootLayout({
           <main className='flex-1 p-4 bg-gray-50'>{children}</main>
 
           {/* Footer */}
-          <footer className='bg-white border-t border-gray-200 text-center p-4 text-sm text-gray-600'>
-            © Italiafire {year}
+          <footer className='bg-white border-t flex justify-center border-gray-200 text-sm text-gray-600 gap-5'>
+            <div> © Italiafire {year}</div>
+            <Link href='/login'>
+              <p>login</p>
+            </Link>
           </footer>
         </Providers>
       </body>
