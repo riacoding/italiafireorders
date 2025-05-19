@@ -35,7 +35,7 @@ export default function OrderCard({ order, newOrderIds, handlePrepared }: Props)
         </div>
         <div className='flex justify-between'>
           <div>
-            <h2 className='text-lg font-semibold'>Order #{ticket}</h2>
+            <h2 className='text-lg font-semibold'>Ticket #{ticket?.slice(-3)}</h2>
             <p className='text-sm text-muted-foreground'>{createdAt ? format(createdAt, 'PPpp') : '—'}</p>
             {recipient?.displayName && <p className='text-sm'>Customer: {recipient.displayName}</p>}
             {fulfillment?.pickupAt && <p className='text-sm'>Pickup: {format(new Date(fulfillment.pickupAt), 'p')}</p>}

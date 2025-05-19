@@ -42,10 +42,16 @@ export interface NormalizedTopping {
   isLocked?: boolean // optional
 }
 
+export type SecureReceipt = {
+  accessToken?: string
+  receiptItems: ReceiptItem[]
+}
+
 export type ReceiptItem = {
   name: string
   quantity: number
   basePrice: number
+  accessToken?: string
   totalPrice: number
   modifiers: {
     name: string
@@ -193,6 +199,7 @@ export type SquareOrder = {
   metadata?: {
     menuSlug?: string
     ticketNumber?: string
+    accessToken?: string
   }
   totalMoney?: Money
   totalTaxMoney?: Money

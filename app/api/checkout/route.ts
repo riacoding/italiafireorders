@@ -16,10 +16,15 @@ export async function POST(req: NextRequest) {
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
   try {
     const body = await req.json()
-    const { cartItems, locationId, menuSlug } = body
+    const { cartItems, locationId, menuSlug, accessToken, timeZone } = body
 
-    const { data: ticket } = await cookieBasedClient.queries.getTicket({ authMode })
-    console.log('cartItems', JSON.stringify(cartItems, null, 2))
+    const { data: ticket } = await cookieBasedClient.queries.getTicket(
+      { locationId: locationId, timeZone: timeZone },
+      { authMode }
+    )
+
+    const displayTicketNumber: string = ticket?.ticketNumber?.slice(-12) || ''
+
     const lineItems = cartItems.map((item: any) => ({
       catalogObjectId: item.catalogVariationId,
       quantity: item.quantity.toString(),
@@ -48,9 +53,9 @@ export async function POST(req: NextRequest) {
       order: {
         locationId,
         referenceId: ticket?.ticketNumber,
-        ticketName: ticket?.ticketNumber,
+        ticketName: displayTicketNumber,
         source: {
-          name: 'Web Order',
+          name: 'PrepEat.io',
         },
         lineItems,
         taxes: [
@@ -67,7 +72,7 @@ export async function POST(req: NextRequest) {
             state: 'PROPOSED',
             pickupDetails: {
               recipient: {
-                displayName: ticket?.ticketNumber,
+                displayName: ticket?.ticketNumber?.slice(-12),
               },
               note: 'Customer will pick up at the counter.',
               pickupAt: new Date(Date.now() + 15 * 60000).toISOString(), // 15 mins from now
@@ -76,16 +81,18 @@ export async function POST(req: NextRequest) {
         ],
         metadata: {
           menuSlug: menuSlug,
-          ticketNumber: ticket?.ticketNumber,
+          ticketNumber: displayTicketNumber,
+          accessToken: accessToken,
+          timeZone: timeZone,
         },
       },
       checkoutOptions: {
-        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/thankyou?order=${ticket?.ticketNumber?.slice(-3)}`,
+        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/thankyou?order=${ticket?.ticketNumber}`,
         allowTipping: true,
       },
     })
 
-    return NextResponse.json({ url: result.paymentLink?.longUrl })
+    return NextResponse.json({ url: result.paymentLink?.longUrl, ticketNumber: ticket?.ticketNumber })
   } catch (err) {
     console.error('Error creating Square checkout:', err)
     return new NextResponse('Internal Server Error', { status: 500 })

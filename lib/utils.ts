@@ -2,6 +2,8 @@ import { NormalizedItem, ReceiptItem, SquareItem, SquareModifierList } from '@/t
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
+const locationId = process.env.NEXT_PUBLIC_LOCATION_ID
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -12,7 +14,6 @@ export function extractReceiptItems(order: any, nameOverrides: Record<string, st
 
   return order.lineItems.map((item: any): ReceiptItem => {
     const quantity = parseInt(item.quantity || '1', 10)
-    console.log('nameOverrides extractReceipt', item, item.catalogObjectId)
     const overrideName = item.catalogObjectId ? nameOverrides[item.catalogObjectId] : undefined
 
     return {
@@ -27,6 +28,14 @@ export function extractReceiptItems(order: any, nameOverrides: Record<string, st
       })),
     }
   })
+}
+
+export const orderNumberToTicket = (orderNumber: string) => {
+  const date = new Date()
+  const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
+  const ticket = `${locationId}-${dateStr}-${orderNumber}` // e.g., 20250505-003
+  console.log('ticket', ticket)
+  return ticket
 }
 
 export function normalizeSquareItem({

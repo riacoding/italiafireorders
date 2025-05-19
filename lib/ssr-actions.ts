@@ -47,9 +47,10 @@ import {
   ReceiptItem,
   FulfillmentState,
   SquareOrder,
+  SecureReceipt,
 } from '@/types'
 import { CloudCogIcon } from 'lucide-react'
-import { extractReceiptItems } from './utils'
+import { extractReceiptItems, orderNumberToTicket } from './utils'
 import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
 import { sanitizeBigInts } from '@/amplify/functions/webhookProcessor/util'
@@ -292,16 +293,15 @@ export async function getSquareItems(ids: string[]): Promise<SquareItem[]> {
     }))
 }
 
-export async function getSquareOrderByOrderNumber(orderNumber: string): Promise<ReceiptItem[] | null> {
+export async function getSquareOrderByOrderNumber(
+  orderNumber: string,
+  orderToken: string
+): Promise<ReceiptItem[] | null> {
   const token = process.env.SQUARE_ACCESS_TOKEN || 'noToken'
   const locationId = process.env.SQUARE_LOCATION_ID || 'noLocation'
 
-  // Construct full reference ID from today's date and order number
-  const date = new Date()
-  const yyyymmdd = date.toISOString().slice(0, 10).replace(/-/g, '')
-  const dateStr = yyyymmdd // YYYYMMDD
+  const referenceId = orderNumber
 
-  const referenceId = `${dateStr}-${orderNumber}` // e.g., 20250505-003
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
 
   try {
@@ -317,14 +317,15 @@ export async function getSquareOrderByOrderNumber(orderNumber: string): Promise<
     }
     const raw = data[0]?.rawData
 
-    if (typeof raw !== 'string') {
+    if (!raw) {
       console.error('❌ rawData is missing or not a string')
       return null
     }
 
-    const order = JSON.parse(raw)
-    console.log('order:', order)
+    const order: SquareOrder = typeof raw === 'string' ? JSON.parse(raw) : ''
+
     const menuSlug = order?.metadata?.menuSlug
+    const accessToken = order?.metadata?.accessToken
     const menu = menuSlug ? await getCurrentMenu(menuSlug) : null
     if (menu) {
       const { data: menuItems } = await menu.menuItems()
@@ -337,7 +338,10 @@ export async function getSquareOrderByOrderNumber(orderNumber: string): Promise<
       }
       console.log('name overrides', nameOverrides)
       const receiptItems = extractReceiptItems(order, nameOverrides)
-      return receiptItems
+      if (accessToken === orderToken) {
+        return receiptItems
+      }
+      return null
     }
 
     return null

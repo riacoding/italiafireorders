@@ -14,8 +14,10 @@ import { useRouter } from 'next/navigation'
 import { CartItem } from '@/types'
 
 const locationId = process.env.NEXT_PUBLIC_LOCATION_ID
+const timeZone = 'America/Los_Angeles'
 
 export default function CartPage() {
+  console.log('location', locationId)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [hasHydrated, setHasHydrated] = useState(false)
   const { toast } = useToast()
@@ -44,6 +46,7 @@ export default function CartPage() {
   }
 
   const placeOrder = async () => {
+    const accessToken = crypto.randomUUID().slice(0, 8)
     if (cartItems.length === 0) {
       toast({
         title: 'Cart is empty',
@@ -58,11 +61,12 @@ export default function CartPage() {
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cartItems, locationId, menuSlug }),
+      body: JSON.stringify({ cartItems, locationId, menuSlug, accessToken, timeZone }),
     })
 
     const data = await res.json()
     console.log('checkout link url', data)
+    localStorage.setItem(data.ticketNumber, accessToken)
     if (data.url) {
       requestAnimationFrame(() => {
         window.location.href = data.url

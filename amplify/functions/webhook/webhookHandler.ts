@@ -6,7 +6,7 @@ const SQUARE_WEBHOOK_SECRET = process.env.SQUARE_WEBHOOK_SECRET!
 const WEBHOOK_URL = process.env.WEBHOOK_URL!
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log('event:', event)
+  console.log('event: ', event)
   const rawBody = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || ''
   const signature = event.headers['x-square-signature']
 

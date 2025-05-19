@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import crypto from 'crypto'
-import { SquareClient, SquareEnvironment } from 'square'
+import { randomUUID } from 'crypto'
+import { SquareClient, SquareEnvironment, Square } from 'square'
 import type { Handler } from 'aws-lambda'
 import type { Schema } from '../../data/resource'
 import { Amplify } from 'aws-amplify'
@@ -8,11 +8,12 @@ import { generateClient } from 'aws-amplify/data'
 import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtime'
 import { env } from '$amplify/env/webhookProcessorHandler' // replace with your function name
 import { sanitizeBigInts } from './util'
-import { SquareFulfillmentUpdate } from './types'
+import { SquareFulfillmentUpdate, UpdateOrderParams } from './types'
 import twilio from 'twilio'
 
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
 const TWILIO_FROM = process.env.TWILIO_FROM! // your Twilio number or messaging service SID
+const ORDER_SOURCE = 'PrepEat.io'
 
 const SQUARE_WEBHOOK_SECRET = process.env.SQUARE_WEBHOOK_SECRET!
 const WEBHOOK_URL = process.env.WEBHOOK_URL!
@@ -89,7 +90,39 @@ export async function createOrder(orderId: string, eventId: string) {
     return { statusCode: 200, body: 'already exists' }
   }
 
-  const { data, errors } = await amplifyClient.models.Order.create({
+  if (order && !order?.referenceId) {
+    const { data: ticket, errors } = await amplifyClient.queries.getTicket(
+      { locationId: order?.locationId!, timeZone: 'America/Los_Angeles' },
+      { authMode: 'iam' }
+    )
+    order.referenceId = ticket?.ticketNumber
+  }
+
+  console.log('******New ORDER with TICKET******', order)
+
+  if (
+    order?.id &&
+    order?.locationId &&
+    order.referenceId &&
+    order?.version &&
+    order.fulfillments &&
+    order?.source?.name !== ORDER_SOURCE
+  ) {
+    await updateSquareOrder({
+      order: {
+        id: order.id,
+        locationId: order.locationId,
+        referenceId: order.referenceId,
+        version: order.version,
+        fullFillmentId: order.fulfillments[0].uid!,
+      },
+      source: order.source?.name?.includes('Sandbox') ? 'In Person' : ORDER_SOURCE,
+      recipient: order?.fulfillments[0].pickupDetails?.recipient,
+    })
+    console.log(`${order?.id} order source updated`)
+  }
+
+  const { data: amplifyOrder, errors } = await amplifyClient.models.Order.create({
     id: order?.id,
     locationId: order?.locationId!,
     referenceId: order?.referenceId,
@@ -102,8 +135,10 @@ export async function createOrder(orderId: string, eventId: string) {
     console.error('Amplify Create Order Error:', JSON.stringify(errors))
     throw new Error(errors.map((e) => e.message).join(', '))
   }
-  console.log(`Amplify order created:${data?.id} `)
-  return data?.id
+
+  console.log(`Amplify order created:${amplifyOrder?.id} `)
+
+  return amplifyOrder?.id
 }
 
 export async function fulfillmentUpdated(update: SquareFulfillmentUpdate, eventId: string) {
@@ -127,23 +162,57 @@ export async function updateOrder(orderId: string, eventId?: string) {
   const amount = order.totalMoney?.amount
   const amountNumber = typeof amount === 'bigint' ? Number(amount) : amount
 
-  if (!order?.id) {
+  if (!order?.id && order.locationId) {
     console.warn(`⏳ [${eventId}] Order not found locally. Creating stub.`)
-    const { data, errors } = await amplifyClient.models.Order.create({
+    const { data: ticket, errors: ticketErrors } = await amplifyClient.queries.getTicket(
+      { locationId: order?.locationId, timeZone: 'timeZone' },
+      { authMode: 'iam' }
+    )
+
+    if (ticketErrors?.length) {
+      console.error(`❌ [${eventId}] Error fetchingTicket:`, JSON.stringify(ticketErrors))
+      throw new Error(ticketErrors.map((e) => e.message).join(', '))
+    }
+
+    const { data: amplifyOrder, errors } = await amplifyClient.models.Order.create({
       id: order.id,
       locationId: order.locationId!,
-      referenceId: order.referenceId,
+      referenceId: ticket?.ticketNumber, // call get ticket
       status: order.state,
       totalMoney: amountNumber,
-      rawData: JSON.stringify(order),
+      fulfillmentStatus: 'PROPOSED',
+      rawData: JSON.stringify({ ...order, source: { name: ORDER_SOURCE } }),
     })
+
+    console.log('******New ORDER with TICKET******', order)
+
+    if (
+      order &&
+      order?.id &&
+      order?.locationId &&
+      order.referenceId &&
+      order?.version &&
+      order?.source?.name !== ORDER_SOURCE
+    ) {
+      await updateSquareOrder({
+        order: {
+          id: order.id,
+          locationId: order.locationId,
+          referenceId: order.referenceId,
+          version: order.version,
+          fullFillmentId: order.fulfillments[0].uid,
+        },
+        source: 'In Person',
+      })
+      console.log(`${order?.id} order source updated`)
+    }
 
     if (errors?.length) {
       console.error(`❌ [${eventId}] Error creating stub order:`, JSON.stringify(errors))
       throw new Error(errors.map((e) => e.message).join(', '))
     }
 
-    console.log(`✅ [${eventId}] Stub order created during update flow: ${data?.id}`)
+    console.log(`✅ [${eventId}] Stub order created during update flow: ${order?.id}`)
   }
 
   let fulfillmentStatus = 'PROPOSED'
@@ -279,5 +348,46 @@ async function upsertPhoneByTicketNumber({ ticketNumber, phone }: { ticketNumber
 
     console.log(`📞 Created phone ${data?.id}`)
     return data
+  }
+}
+
+export const updateSquareOrder = async ({
+  order,
+  referenceId,
+  source,
+  recipient,
+}: UpdateOrderParams): Promise<void> => {
+  console.log('updating Square Order', order.id, order.fullFillmentId, order.referenceId)
+  try {
+    const updateRequest: Square.UpdateOrderRequest = {
+      orderId: order.id,
+      idempotencyKey: randomUUID(),
+      order: {
+        locationId: order.locationId,
+        version: order.version,
+        referenceId,
+        source: {
+          name: source || ORDER_SOURCE,
+        },
+        fulfillments: [
+          {
+            uid: order.fullFillmentId,
+            type: 'PICKUP',
+            state: 'PROPOSED',
+            pickupDetails: {
+              recipient: {
+                displayName: recipient ? order.referenceId?.slice(-12) : null,
+              },
+              note: 'Customer will pick up at the counter.',
+              pickupAt: new Date(Date.now() + 15 * 60000).toISOString(), // 15 mins from now
+            },
+          },
+        ],
+      },
+    }
+
+    await client.orders.update(updateRequest)
+  } catch (err) {
+    console.error('updateSquareOrder error:', err)
   }
 }

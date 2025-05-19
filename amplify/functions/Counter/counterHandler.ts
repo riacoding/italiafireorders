@@ -1,14 +1,17 @@
 import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { toZonedTime, format } from 'date-fns-tz'
 
 const client = new DynamoDBClient({})
 
-export const handler = async () => {
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '') // "20240501"
-  const counterKey = `order-${today}`
-  const tableName = process.env.COUNTER_TABLE
+export const handler = async (event: { arguments: { locationId: string; timeZone: string } }) => {
+  const { locationId, timeZone } = event.arguments
 
-  console.log('env', process.env)
+  const zonedNow = toZonedTime(new Date(), timeZone)
+  const today = format(zonedNow, 'yyyyMMdd') // e.g., "20240517"
+
+  const counterKey = `order-${locationId}-${today}`
+  const tableName = process.env.COUNTER_TABLE
 
   const command = new UpdateItemCommand({
     TableName: tableName,
@@ -26,6 +29,6 @@ export const handler = async () => {
   const value = unmarshall(result.Attributes!)?.value
 
   return {
-    ticketNumber: `${today}-${value.toString().padStart(3, '0')}`,
+    ticketNumber: `${locationId}-${today}-${value.toString().padStart(3, '0')}`,
   }
 }

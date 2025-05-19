@@ -3,11 +3,12 @@
 import { useCart } from '@/components/CartContext'
 import { ReceiptSimpleList } from '@/components/ReceiptItemList'
 import { getSquareOrderByOrderNumber, updateOrderContact } from '@/lib/ssr-actions'
-import { ReceiptItem } from '@/types'
+import { ReceiptItem, SecureReceipt } from '@/types'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
 export default function ThankYouClient() {
   const searchParams = useSearchParams()
@@ -16,9 +17,11 @@ export default function ThankYouClient() {
   const [rawPhone, setRawPhone] = useState('')
   const formattedPhone = formatPhoneInput(rawPhone)
   const [submitted, setSubmitted] = useState(false)
+  const router = useRouter()
 
   const [isLoading, setIsLoading] = useState(true)
-  const orderNumber = searchParams.get('order') || 'N/A'
+  const orderAccess = searchParams.get('order') || 'none-none'
+  const [locationId, date, orderNumber] = orderAccess.split('-')
   const { clearCart } = useCart()
 
   useEffect(() => {
@@ -27,8 +30,12 @@ export default function ThankYouClient() {
 
   useEffect(() => {
     async function fetchOrder() {
-      const res = await getSquareOrderByOrderNumber(orderNumber)
-      setOrder(res)
+      const orderToken = localStorage.getItem(orderAccess)
+      if (orderToken) {
+        const res = await getSquareOrderByOrderNumber(orderAccess, orderToken)
+        setOrder(res)
+      }
+
       setIsLoading(false)
     }
 
@@ -61,7 +68,7 @@ export default function ThankYouClient() {
   }
 
   return (
-    <div className='w-full flex  items-center justify-center'>
+    <div className='w-full flex flex-col  items-center justify-center'>
       <div className='w-full max-w-md flex flex-col items-center justify-center bg-gray-100 p-4'>
         <div className='w-full border-4 border-black rounded-md p-8 text-center bg-white shadow-md'>
           <h1 className='text-3xl font-bold mb-4'>Thank you</h1>
@@ -88,6 +95,7 @@ export default function ThankYouClient() {
           {submitted && <p className='mt-6 text-green-600'>✅ You’ll get a text when it’s ready!</p>}
         </div>
       </div>
+      <pre>{JSON.stringify(order, null, 2)}</pre>
     </div>
   )
 }

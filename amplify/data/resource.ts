@@ -67,7 +67,6 @@ const schema = a
       })
       .secondaryIndexes((index) => [index('locationId')])
       .authorization((allow) => [allow.groups(['admin']), allow.guest().to(['read'])]),
-
     MenuItem: a
       .model({
         id: a.id().required(),
@@ -104,6 +103,10 @@ const schema = a
       .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
     getTicket: a
       .query()
+      .arguments({
+        locationId: a.string().required(),
+        timeZone: a.string().required(),
+      })
       .returns(a.ref('TicketResponse'))
       .authorization((allow) => [allow.guest(), allow.authenticated()])
       .handler(a.handler.function(counter)),

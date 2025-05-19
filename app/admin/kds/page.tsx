@@ -58,7 +58,7 @@ export default function OrdersPage() {
 
   return (
     <div className='container max-w-4xl py-8'>
-      <h1 className='text-2xl font-bold mb-6'>Orders</h1>
+      <h1 className='text-2xl font-bold mb-6'>Open Tickets</h1>
 
       {orders.length === 0 ? (
         <p className='text-muted-foreground'>No orders yet.</p>

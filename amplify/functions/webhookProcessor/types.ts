@@ -116,6 +116,21 @@ export type SquareFulfillmentUpdate = {
   }>
 }
 
+export type UpdateOrderParams = {
+  order: {
+    id: string
+    locationId: string
+    referenceId: string
+    version: number
+    fullFillmentId: string
+  }
+  referenceId?: string
+  source?: string
+  recipient?: {
+    displayName?: string | null
+  }
+}
+
 export type SquareWebhookEvent =
   | SquareOrderCreatedWebhook
   | SquareOrderUpdatedWebhook
