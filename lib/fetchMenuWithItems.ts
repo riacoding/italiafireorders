@@ -47,7 +47,7 @@ export const fetchMenuWithItems = cache(
           sortOrder: mi.sortOrder ?? 0,
           isFeatured: mi.isFeatured ?? false,
           menuItemId: mi.id,
-          image: mi.s3ImageKey,
+          image: mi.s3ImageKey || normalized.image,
           catalogItemId: mi.catalogItemId,
         }
       })
