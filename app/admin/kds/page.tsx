@@ -3,17 +3,11 @@
 import { useState, useEffect } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '@/amplify/data/resource'
-import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import OrderTimer from '@/components/OrderTimer'
-import { format } from 'date-fns'
 import { FulfillmentState, SquareOrder } from '@/types'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import useOrderAge from '@/hooks/useOrderAge'
 import OrderCard from '@/components/OrderCard'
 import { updateSquareOrder } from '@/lib/ssr-actions'
-import { useAuthenticator } from '@aws-amplify/ui-react'
+import { useMarkPrepared } from '@/hooks/useMarkPrepared'
+import { useQueryClient } from '@tanstack/react-query'
 
 const client = generateClient<Schema>()
 export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
@@ -21,6 +15,7 @@ export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
+  const { mutate: markPrepared } = useMarkPrepared()
 
   useEffect(() => {
     const sub = client.models.Order.observeQuery().subscribe({
@@ -52,10 +47,6 @@ export default function OrdersPage() {
     return () => sub.unsubscribe()
   }, [])
 
-  const handleOrder = async (order: Order) => {
-    await updateSquareOrder(order.id, order.locationId!, { state: 'PREPARED' })
-  }
-
   return (
     <div className='container max-w-4xl py-8'>
       <h1 className='text-2xl font-bold mb-6'>Open Tickets</h1>
@@ -65,7 +56,7 @@ export default function OrdersPage() {
       ) : (
         <div className='space-y-4'>
           {orders.map((order) => {
-            return <OrderCard key={order.id} order={order} newOrderIds={newOrderIds} handlePrepared={handleOrder} />
+            return <OrderCard key={order.id} order={order} newOrderIds={newOrderIds} handlePrepared={markPrepared} />
           })}
         </div>
       )}

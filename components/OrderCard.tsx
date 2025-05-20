@@ -56,6 +56,7 @@ export default function OrderCard({ order, newOrderIds, handlePrepared }: Props)
                 <span className='text-sm text-muted-foreground'>
                   ${(Number(item.totalMoney?.amount ?? 0) / 100).toFixed(2)}
                 </span>
+                <span>{item.note}</span>
               </div>
 
               {item.variationName && <div className='text-xs text-muted-foreground italic'>{item.variationName}</div>}

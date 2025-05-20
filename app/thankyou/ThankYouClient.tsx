@@ -34,6 +34,7 @@ export default function ThankYouClient() {
       if (orderToken) {
         const res = await getSquareOrderByOrderNumber(orderAccess, orderToken)
         setOrder(res)
+        localStorage.removeItem(orderAccess)
       }
 
       setIsLoading(false)

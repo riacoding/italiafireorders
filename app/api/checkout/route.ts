@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       catalogObjectId: item.catalogVariationId,
       quantity: item.quantity.toString(),
       name: item.customName || item.name,
+      note: 'No meat',
       basePriceMoney: {
         amount: BigInt(item.price), // Ensure this is the correct price in cents
         currency: 'USD',
@@ -73,6 +74,8 @@ export async function POST(req: NextRequest) {
             pickupDetails: {
               recipient: {
                 displayName: ticket?.ticketNumber?.slice(-12),
+                phoneNumber: '+15555555555',
+                emailAddress: 'test@test.com',
               },
               note: 'Customer will pick up at the counter.',
               pickupAt: new Date(Date.now() + 15 * 60000).toISOString(), // 15 mins from now

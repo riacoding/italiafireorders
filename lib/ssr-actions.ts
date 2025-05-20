@@ -378,6 +378,7 @@ export async function saveMenu(input: MenuInput): Promise<{ id: string | null }>
 
   const cleanData = {
     ...rest,
+    locationId: rest.locationId.toLowerCase(),
     theme: rest.theme,
   }
 

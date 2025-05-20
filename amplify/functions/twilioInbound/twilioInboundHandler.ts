@@ -24,7 +24,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   if (message) {
     const { data: menu, errors } = await client.models.Menu.listMenuByLocationId(
       { locationId: message },
-      { authMode: 'identityPool' }
+      { authMode: 'iam' }
     )
     console.log('menu', menu)
     if (errors?.length) {
