@@ -22,6 +22,7 @@ export default function EditMenuItemForm({ menuItem }: { menuItem: any }) {
       customName: name,
       sortOrder,
       isFeatured,
+      s3ImageKey: image,
     })
     setSaving(false)
   }

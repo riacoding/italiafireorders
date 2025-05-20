@@ -614,6 +614,7 @@ export async function updateMenuItem(input: {
   customName?: string
   sortOrder?: number
   isFeatured?: boolean
+  s3ImageKey?: string
 }) {
   console.log('MenuItem update:', input)
   const { id, ...fields } = input
