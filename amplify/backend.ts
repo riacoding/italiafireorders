@@ -80,7 +80,7 @@ backend.addOutput({
 })
 
 const counterTable = backend.data.resources.tables['TicketCounter']
-const userPool = backend.auth.resources.userPool as UserPool
+//const userPool = backend.auth.resources.userPool as UserPool
 
 backend.counter.addEnvironment('COUNTER_TABLE', counterTable.tableName)
 backend.webhook.addEnvironment('WEBHOOK_URL', `${httpApi.url!}square-webhook`)
@@ -92,11 +92,11 @@ backend.webhookProcessor.addEnvironment('IDEMPOTENCY_TABLE', squareWebhook.idemp
 
 squareWebhook.squareTopic.grantPublish(backend.webhook.resources.lambda)
 
-userPool.addGroup('Admin', {
-  precedence: 0,
-  description: 'Admin group',
-  groupName: 'admin',
-})
+// userPool.addGroup('Admin', {
+//   precedence: 0,
+//   description: 'Admin group',
+//   groupName: 'admin',
+// })
 
 backend.counter.resources.lambda.addToRolePolicy(
   new PolicyStatement({
