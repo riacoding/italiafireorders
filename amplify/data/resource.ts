@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend'
 import { counter } from '../functions/Counter/resource'
+import { squareAuth } from '../functions/getSquareAuth/resource'
 import { webhookProcessor } from '../functions/webhookProcessor/resource'
 import { twilioInbound } from '../functions/twilioInbound/resource'
 
@@ -8,6 +9,24 @@ const schema = a
     TicketResponse: a.customType({
       ticketNumber: a.string(),
     }),
+    SquareAuthResponse: a.customType({
+      url: a.string(),
+      auth: a.string(),
+    }),
+    Merchant: a
+      .model({
+        squareMerchantId: a.string().required(),
+        accessToken: a.string().required(),
+        refreshToken: a.string(),
+        tokenExpiresAt: a.datetime(),
+        tokenrefreshedAt: a.datetime(),
+        businessName: a.string().required(),
+        locationIds: a.string().array(),
+        handle: a.id().required(),
+      })
+      .secondaryIndexes((index) => [index('squareMerchantId')])
+      .identifier(['handle'])
+      .authorization((allow) => [allow.owner(), allow.authenticated().to(['create', 'read']), allow.groups(['admin'])]),
     Order: a
       .model({
         referenceId: a.string(),
@@ -38,6 +57,7 @@ const schema = a
         id: a.id().required(),
         squareItemId: a.string().required(), // Square object ID
         catalogVariationId: a.string(),
+        s3ItemKey: a.string(),
         catalogData: a.json().required(), // Full Square catalog JSON
       })
       .secondaryIndexes((index) => [index('squareItemId')])
@@ -66,7 +86,7 @@ const schema = a
         menuItems: a.hasMany('MenuItem', 'menuId'), // 🆕 one-to-many
       })
       .secondaryIndexes((index) => [index('locationId')])
-      .authorization((allow) => [allow.groups(['admin']), allow.guest().to(['read'])]),
+      .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
     MenuItem: a
       .model({
         id: a.id().required(),
@@ -101,6 +121,12 @@ const schema = a
         topping: a.belongsTo('Topping', 'toppingId'),
       })
       .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
+    getSquareAuthUrl: a
+      .query()
+      .arguments({ handle: a.string().required() })
+      .returns(a.ref('SquareAuthResponse'))
+      .authorization((allow) => [allow.guest(), allow.authenticated()])
+      .handler(a.handler.function(squareAuth)),
     getTicket: a
       .query()
       .arguments({

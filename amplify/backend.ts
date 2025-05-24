@@ -14,6 +14,7 @@ import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations
 import { CorsHttpMethod, HttpApi, HttpMethod, PayloadFormatVersion } from 'aws-cdk-lib/aws-apigatewayv2'
 import { Stack } from 'aws-cdk-lib'
 import { SquareWebhookStack } from './custom/webhookqueue/resource'
+import { squareAuth } from './functions/getSquareAuth/resource'
 import branchName from 'current-git-branch'
 
 config({ path: '.env.local', override: false })
@@ -26,6 +27,7 @@ const backend = defineBackend({
   webhook,
   webhookProcessor,
   twilioInbound,
+  squareAuth,
 })
 const environment = process.env.ENVIRONMENT ?? 'dev'
 const ordersTable = backend.data.resources.tables['Order']

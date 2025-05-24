@@ -48,8 +48,8 @@ import {
   FulfillmentState,
   SquareOrder,
   SecureReceipt,
+  SquareAuthResponse,
 } from '@/types'
-import { CloudCogIcon } from 'lucide-react'
 import { extractReceiptItems, orderNumberToTicket } from './utils'
 import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
@@ -751,6 +751,10 @@ export async function syncMenuItems() {
   }
 }
 
+export async function setupWebhooks() {}
+
+export async function createDefaultMenu() {}
+
 export async function upsertCatalogItem({
   squareItemId,
   catalogVariationId,
@@ -811,6 +815,18 @@ export async function upsertCatalogItem({
 
     return createdItem
   }
+}
+
+export async function getAuthUrl(handle: string): Promise<SquareAuthResponse> {
+  console.log('getting auth with handle:', handle)
+  const { data, errors } = await cookieBasedClient.queries.getSquareAuthUrl({ handle })
+
+  if (errors?.length) {
+    console.error('Error fetching auth url:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+
+  return { url: data?.url || null, auth: data?.auth || null }
 }
 
 function getModifierListsForItem(item: SquareItem, all: Record<string, SquareModifierList>): SquareModifierList[] {

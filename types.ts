@@ -5,6 +5,7 @@ export type Menu = Schema['Menu']['type']
 
 export type MenuItem = Schema['MenuItem']['type']
 export type CatalogItem = Schema['CatalogItem']['type']
+export type Merchant = Schema['Merchant']['type']
 
 export type SafeMenuItem = RemoveFunctions<Schema['MenuItem']['type']>
 
@@ -271,4 +272,9 @@ export type SquareCatalogObject = SquareItem | SquareModifier | SquareModifierLi
 export type HydratedCatalog = {
   item: SquareCatalogObject
   modifierLists: SquareModifierList[]
+}
+
+export type SquareAuthResponse = {
+  url: string | null
+  auth: string | null
 }

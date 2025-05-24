@@ -17,7 +17,7 @@ export default function Admin() {
     fetchMenus().then(setMenus)
   }, [])
 
-  if (!menus || menus.length === 0) {
+  if (!menus) {
     return <div>Loading...</div>
   }
 
