@@ -20,7 +20,7 @@ import branchName from 'current-git-branch'
 config({ path: '.env.local', override: false })
 
 const backend = defineBackend({
-  auth,
+  //auth,
   data,
   storage,
   counter,
