@@ -30,6 +30,7 @@ next-env.d.ts
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+env.json
 
 #mac 
 .DS_Store
