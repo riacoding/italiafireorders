@@ -22,8 +22,8 @@ config({ path: '.env.local', override: false })
 const backend = defineBackend({
   //auth,
   //data,
-  storage,
-  counter,
+  //storage,
+  //counter,
   //webhook,
   //webhookProcessor,
   //twilioInbound,
