@@ -34,3 +34,4 @@ env.json
 
 #mac 
 .DS_Store
+amplify/.DS_store
