@@ -31,5 +31,5 @@ next-env.d.ts
 amplify_outputs*
 amplifyconfiguration*
 
-#mac
+#mac 
 .DS_Store

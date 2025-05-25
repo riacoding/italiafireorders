@@ -21,10 +21,10 @@ export default function SetupProgressPage() {
         await syncMenuItems()
       } else if (stepIndex === 1) {
         // 2. Set up Webhooks
-        await setupWebhooks()
+        // await setupWebhooks()
       } else if (stepIndex === 2) {
         // 3. Create initial menu
-        await createDefaultMenu()
+        //await createDefaultMenu()
       } else {
         setComplete(true)
         setTimeout(() => router.push('/admin'), 2000)
