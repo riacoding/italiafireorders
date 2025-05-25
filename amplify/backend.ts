@@ -22,7 +22,7 @@ config({ path: '.env.local', override: false })
 const APP_ID = process.env.AWS_APP_ID //the amplify App id
 
 const backend = defineBackend({
-  //auth,
+  auth,
   data,
   storage,
   counter,
