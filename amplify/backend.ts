@@ -19,6 +19,8 @@ import branchName from 'current-git-branch'
 
 config({ path: '.env.local', override: false })
 
+const APP_ID = process.env.AWS_APP_ID //the amplify App id
+
 const backend = defineBackend({
   //auth,
   data,
@@ -32,10 +34,13 @@ const backend = defineBackend({
 const environment = process.env.ENVIRONMENT ?? 'dev'
 const ordersTable = backend.data.resources.tables['Order']
 
+backend.stack.tags.tagValues()
+
 const squareWebhook = new SquareWebhookStack(backend.data.stack, 'SquareWebHookStack', {
   squareProcessorLambda: backend.webhookProcessor.resources.lambda,
   ordersTable: ordersTable,
   environment,
+  appId: APP_ID!,
 })
 
 const apiStack = Stack.of(backend.webhook.resources.lambda.stack)

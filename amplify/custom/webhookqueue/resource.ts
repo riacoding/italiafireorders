@@ -17,6 +17,7 @@ export type WebhookStackProps = {
   squareProcessorLambda: IFunction // Lambda B: SquareWebhookProcessor
   ordersTable: ITable
   environment: string
+  appId: string
 }
 
 export class SquareWebhookStack extends Construct {
@@ -29,13 +30,13 @@ export class SquareWebhookStack extends Construct {
 
   constructor(scope: Construct, id: string, props: WebhookStackProps) {
     super(scope, id)
-    const { squareProcessorLambda, ordersTable, environment } = props
+    const { squareProcessorLambda, ordersTable, environment, appId } = props
 
     this.ordersTable = ordersTable
     this.squareProcessorLambda = squareProcessorLambda
 
     this.idempotencyTable = new Table(this, 'SquareEventLog', {
-      tableName: `${environment}-SquareEventLog`,
+      tableName: `SquareEventLog-${appId}-${environment}`,
       partitionKey: { name: 'event_id', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
       timeToLiveAttribute: 'ttl',
@@ -52,12 +53,12 @@ export class SquareWebhookStack extends Construct {
 
     //  Create SNS Topic
     this.squareTopic = new sns.Topic(this, `SquareWebhookTopic`, {
-      topicName: `${environment}-SquareWebhookTopic`,
+      topicName: `SquareWebhookTopic-${appId}-${environment}`,
     })
 
     //  Create SQS Queue
     const squareQueue = new sqs.Queue(this, 'SquareWebhookQueue', {
-      queueName: `${environment}-SquareWebhookQueue`,
+      queueName: `SquareWebhookQueue-${appId}-${environment}`,
       retentionPeriod: cdk.Duration.days(4), // Retains messages for 4 days
       visibilityTimeout: cdk.Duration.seconds(30), // Matches Lambda timeout
     })
@@ -66,7 +67,7 @@ export class SquareWebhookStack extends Construct {
 
     //  Create SQS DLQ
     const squareDLQ = new sqs.Queue(this, `${id}-SquareWebhookQueueDLQ`, {
-      queueName: `${environment}-SquareWebhookDLQ`,
+      queueName: `SquareWebhookDLQ-${appId}-${environment}`,
       retentionPeriod: cdk.Duration.days(4), // Retains messages for 4 days
       visibilityTimeout: cdk.Duration.minutes(30), // Matches Lambda timeout
     })
@@ -95,7 +96,7 @@ export class SquareWebhookStack extends Construct {
 
     //  Create Message DLQ Processor Lambda (Reads from SQS DLQ)
     const squareDLQProcessorLambda = new NodejsFunction(this, `${id}-SquareDLQHandler`, {
-      functionName: `${environment}-SquareDLQHandler`,
+      functionName: `SquareDLQHandler-${appId}-${environment}`,
       runtime: lambda.Runtime.NODEJS_22_X,
       entry: url.fileURLToPath(new URL('./SquareDLQ/processor.ts', import.meta.url)),
       timeout: cdk.Duration.seconds(30),
