@@ -39,7 +39,7 @@ export default function AdminPage({ menus }: AdminPageProps) {
   return (
     <div className='w-full md:max-w-2xl mx-auto p-4 space-y-6'>
       <div className='flex flex-col items-center gap-5'>
-        <h1 className='text-2xl font-bold'>Menus</h1>
+        <h1 className='text-2xl font-bold'>Dev-Menus</h1>
 
         <Button
           onClick={handleSync}
