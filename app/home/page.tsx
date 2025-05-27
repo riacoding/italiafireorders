@@ -12,7 +12,11 @@ export default function HomePage() {
           per-transaction fees.
         </p>
         <div className='flex justify-center mb-10'>
-          <img src='/foodtruck.png' alt='Food truck with KDS' className='rounded-xl shadow-lg max-w-[600px] h-auto' />
+          <img
+            src='/foodtruck.png'
+            alt='Food truck with KDS'
+            className='rounded-xl shadow-lg max-w-[300px] md:max-w-[600px]  h-auto'
+          />
         </div>
         <div className='mb-12'>
           <h2 className='text-2xl sm:text-3xl font-semibold mb-4 text-prepeat-orange'>Prep Eat Repeat</h2>
@@ -48,6 +52,12 @@ export default function HomePage() {
               <img src='/forkclock.png' alt='icon' className='w-6 h-6' /> Menus for Venues
             </h2>
             <p>Create and switch menus for each venue, location, or event with ease.</p>
+          </div>
+          <div>
+            <h2 className='text-2xl font-semibold mb-2 flex items-center gap-2'>
+              <img src='/forkclock.png' alt='icon' className='w-6 h-6' /> Keep connected
+            </h2>
+            <p>Menu discovery via text & pickup notification</p>
           </div>
           <div>
             <h2 className='text-2xl font-semibold mb-2 flex items-center gap-2'>

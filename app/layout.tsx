@@ -27,7 +27,7 @@ export default function RootLayout({
           {/* Header */}
           <header className='bg-white border-b border-gray-200 shadow-sm p-4 flex justify-between items-center'>
             <Link href='/'>
-              <Image priority src='/logo.png' alt='ItaliaFire Logo' width={211} height={120} />
+              <Image priority src='/logo.png' alt='Logo' width={150} height={85} />
             </Link>
             <div className='flex align-center justify-center mt-5  gap-5'>
               <CartIcon />
