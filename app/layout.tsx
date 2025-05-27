@@ -27,9 +27,9 @@ export default function RootLayout({
           {/* Header */}
           <header className='bg-white border-b border-gray-200 shadow-sm p-4 flex justify-between items-center'>
             <Link href='/'>
-              <Image priority src='/ItaliaFire.png' alt='ItaliaFire Logo' width={211} height={120} />
+              <Image priority src='/logo.png' alt='ItaliaFire Logo' width={211} height={120} />
             </Link>
-            <div className='flex align-center justify-center  gap-5'>
+            <div className='flex align-center justify-center mt-5  gap-5'>
               <CartIcon />
               <MobileMenu isLoggedIn={true} />
             </div>
@@ -40,7 +40,7 @@ export default function RootLayout({
 
           {/* Footer */}
           <footer className='bg-white border-t flex justify-center border-gray-200 text-sm text-gray-600 gap-5'>
-            <div> © Italiafire {year}</div>
+            <div> © prepeat.io {year}</div>
             <Link href='/login'>
               <p>login</p>
             </Link>
