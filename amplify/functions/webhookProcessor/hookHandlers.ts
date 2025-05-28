@@ -72,7 +72,7 @@ async function updateFulfillmentStatus(orderId: string, newFulfillmentStatus: st
   console.log(`✅ Amplify order updated: ${data?.id} → ${data?.fulfillmentStatus}`)
 }
 
-export async function createOrder(orderId: string, eventId: string) {
+export async function createOrder(orderId: string, eventId: string, merchant_id: string) {
   console.log(`🆕 [${eventId}] Handling order.created:${orderId}`)
   const { order, errors: sqErrors } = await client.orders.get({ orderId })
 
@@ -124,6 +124,7 @@ export async function createOrder(orderId: string, eventId: string) {
 
   const { data: amplifyOrder, errors } = await amplifyClient.models.Order.create({
     id: order?.id,
+    merchantId: merchant_id,
     locationId: order?.locationId!,
     referenceId: order?.referenceId,
     status: order?.state,
@@ -141,7 +142,7 @@ export async function createOrder(orderId: string, eventId: string) {
   return amplifyOrder?.id
 }
 
-export async function fulfillmentUpdated(update: SquareFulfillmentUpdate, eventId: string) {
+export async function fulfillmentUpdated(update: SquareFulfillmentUpdate, eventId: string, merchant_id: string) {
   console.log(`🆕 [${eventId}] Handling order.fulfillment.updated: ${JSON.stringify(update)}`)
   const orderId = update.order_id
   const orderState = update.state
@@ -150,7 +151,7 @@ export async function fulfillmentUpdated(update: SquareFulfillmentUpdate, eventI
   await updateFulfillmentStatus(orderId, status, orderState)
 }
 
-export async function updateOrder(orderId: string, eventId?: string) {
+export async function updateOrder(orderId: string, eventId: string, merchant_id: string) {
   const { order: rawOrder, errors: sqErrors } = await client.orders.get({ orderId })
   const order = sanitizeBigInts(rawOrder)
   console.log(`🔄 [${eventId}] Handling order.updated: ${JSON.stringify(order)}`)
@@ -176,6 +177,7 @@ export async function updateOrder(orderId: string, eventId?: string) {
 
     const { data: amplifyOrder, errors } = await amplifyClient.models.Order.create({
       id: order.id,
+      merchantId: merchant_id,
       locationId: order.locationId!,
       referenceId: ticket?.ticketNumber, // call get ticket
       status: order.state,

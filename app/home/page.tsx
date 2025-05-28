@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button'
+
 export default function HomePage() {
   return (
     <main className='min-h-screen bg-white text-gray-800'>
@@ -93,12 +95,12 @@ export default function HomePage() {
             placeholder='you@example.com'
             className='px-4 py-3 rounded-xl border border-gray-300 w-full sm:w-64'
           />
-          <button
+          <Button
             type='submit'
             className='bg-prepeat-orange text-white font-medium px-6 py-3 rounded-xl hover:bg-orange-600 transition'
           >
             Join the List
-          </button>
+          </Button>
         </form>
       </footer>
     </main>

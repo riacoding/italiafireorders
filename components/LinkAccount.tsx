@@ -13,15 +13,14 @@ export default function LinkAccount() {
 
   useEffect(() => {
     async function getUrl() {
-      if (merchant && merchant.handle) {
-        const { url, auth } = await getAuthUrl(merchant?.handle)
-        console.log('url', url)
+      if (merchant?.handle) {
+        const { url, auth } = await getAuthUrl(merchant.handle)
         setUrl(url)
         setAuth(auth)
       }
     }
     getUrl()
-  }, [])
+  }, [merchant])
 
   if (!merchant) {
     return <div className='text-center text-sm text-gray-500'>No merchant found in context.</div>
@@ -29,7 +28,7 @@ export default function LinkAccount() {
 
   return (
     <div className='max-w-md mx-auto space-y-6 border p-6 rounded-lg shadow-sm bg-white'>
-      <h1 className='text-2xl font-semibold text-center'>Your account is almost ready</h1>
+      <h1 className='text-2xl font-semibold text-center text-prepeat-orange'>Your account is almost ready</h1>
 
       <div className='text-center text-gray-700'>
         <p className='text-lg font-medium'>{merchant.businessName}</p>
@@ -38,12 +37,11 @@ export default function LinkAccount() {
 
       <div className='text-center'>
         <p className='text-gray-600 mb-4'>To accept payments and manage orders, please link your Square account.</p>
-        <Button size='lg' className='w-full' disabled={!url} asChild>
+        <Button size='lg' className='w-full bg-prepeat-orange hover:bg-orange-600' disabled={!url} asChild>
           <Link href={url || '#'} aria-disabled={!url}>
             Link Square
           </Link>
         </Button>
-        <Button onClick={() => console.log(url)}>Print Link</Button>
       </div>
     </div>
   )

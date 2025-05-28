@@ -73,7 +73,7 @@ export default function LoginPage() {
 
         {error && <p className='text-red-500 text-sm'>{error}</p>}
 
-        <Button className='w-full' type='submit' disabled={loading || !email || !password}>
+        <Button className='w-full bg-prepeat-orange' type='submit' disabled={loading || !email || !password}>
           {loading ? 'Logging in...' : 'Log In'}
         </Button>
       </form>

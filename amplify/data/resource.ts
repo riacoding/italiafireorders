@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from '@aws-amplify/backend'
 import { counter } from '../functions/Counter/resource'
 import { squareAuth } from '../functions/getSquareAuth/resource'
 import { webhookProcessor } from '../functions/webhookProcessor/resource'
+import { postConfirmation } from '../auth/postConfirmation/resource'
 import { twilioInbound } from '../functions/twilioInbound/resource'
 
 const schema = a
@@ -13,8 +14,20 @@ const schema = a
       url: a.string(),
       auth: a.string(),
     }),
+    User: a
+      .model({
+        sub: a.string().required(), // Cognito sub
+        email: a.string().required(),
+        merchantId: a.id().required(),
+        owner: a.string().required(),
+      })
+      .secondaryIndexes((index) => [index('sub')])
+      .authorization((allow) => [allow.owner(), allow.groups(['admin'])]),
+
     Merchant: a
       .model({
+        id: a.id().required(),
+        handle: a.id().required(),
         squareMerchantId: a.string().required(),
         accessToken: a.string().required(),
         refreshToken: a.string(),
@@ -22,13 +35,12 @@ const schema = a
         tokenrefreshedAt: a.datetime(),
         businessName: a.string().required(),
         locationIds: a.string().array(),
-        handle: a.id().required(),
       })
-      .secondaryIndexes((index) => [index('squareMerchantId')])
-      .identifier(['handle'])
+      .secondaryIndexes((index) => [index('squareMerchantId'), index('handle')])
       .authorization((allow) => [allow.owner(), allow.authenticated().to(['create', 'read']), allow.groups(['admin'])]),
     Order: a
       .model({
+        merchantId: a.id().required(),
         referenceId: a.string(),
         orderId: a.string(),
         locationId: a.string().required(),
@@ -37,7 +49,7 @@ const schema = a
         fulfillmentStatus: a.string(),
         rawData: a.json(),
       })
-      .secondaryIndexes((index) => [index('referenceId')])
+      .secondaryIndexes((index) => [index('referenceId'), index('merchantId')])
       .authorization((allow) => [
         allow.guest().to(['read']),
         allow.authenticated().to(['read']),
@@ -78,6 +90,7 @@ const schema = a
     Menu: a
       .model({
         id: a.id().required(),
+        merchantId: a.id().required(),
         name: a.string().required(),
         locationId: a.string().required(),
         logo: a.string(),
@@ -85,11 +98,12 @@ const schema = a
         theme: a.json(),
         menuItems: a.hasMany('MenuItem', 'menuId'), // 🆕 one-to-many
       })
-      .secondaryIndexes((index) => [index('locationId')])
+      .secondaryIndexes((index) => [index('locationId'), index('merchantId')])
       .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
     MenuItem: a
       .model({
         id: a.id().required(),
+        merchantId: a.id().required(),
         menuId: a.id().required(), // link to Menu
         catalogItemId: a.id().required(), // link to CatalogItem
         s3ImageKey: a.string(), // optional custom image
@@ -137,7 +151,12 @@ const schema = a
       .authorization((allow) => [allow.guest(), allow.authenticated()])
       .handler(a.handler.function(counter)),
   })
-  .authorization((allow) => [allow.resource(counter), allow.resource(webhookProcessor), allow.resource(twilioInbound)])
+  .authorization((allow) => [
+    allow.resource(counter),
+    allow.resource(webhookProcessor),
+    allow.resource(twilioInbound),
+    allow.resource(postConfirmation),
+  ])
 
 export type Schema = ClientSchema<typeof schema>
 

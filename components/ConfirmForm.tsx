@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 
-// Schema for confirmation form
 const confirmSchema = z.object({
   code: z.string().min(6, 'Confirmation code is required'),
 })
@@ -54,20 +53,23 @@ export default function ConfirmForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4 max-w-md mx-auto'>
-      <h1 className='text-xl font-semibold'>Confirm your email</h1>
+      <h1 className='text-xl font-semibold text-prepeat-orange'>Confirm your email</h1>
 
       <p className='text-sm text-gray-600'>
         Enter the confirmation code sent to <strong>{email}</strong>.
       </p>
 
       <div>
-        <Input placeholder='Confirmation Code' {...register('code')} />
+        <label htmlFor='code' className='block text-sm font-medium text-gray-700 mb-1'>
+          Confirmation Code
+        </label>
+        <Input id='code' placeholder='123456' {...register('code')} />
         {errors.code && <p className='text-red-500 text-sm'>{errors.code.message}</p>}
       </div>
 
       {serverError && <p className='text-red-500 text-sm'>{serverError}</p>}
 
-      <Button type='submit' disabled={isSubmitting}>
+      <Button type='submit' disabled={isSubmitting} className='bg-prepeat-orange hover:bg-orange-600 w-full sm:w-auto'>
         {isSubmitting ? 'Confirming...' : 'Confirm'}
       </Button>
     </form>

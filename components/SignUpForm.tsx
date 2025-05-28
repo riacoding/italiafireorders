@@ -9,7 +9,6 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 
-// Zod schema
 const signupSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -46,7 +45,6 @@ export default function SignupForm() {
           },
         },
       })
-      console.log('signup Result', result)
       setEmail(data.email)
       setUserId(result.userId!)
       setStep('confirm')
@@ -58,31 +56,43 @@ export default function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4 max-w-md mx-auto'>
-      <h1 className='text-xl font-semibold'>Sign up</h1>
+      <h1 className='text-xl font-semibold text-prepeat-orange'>Sign Up</h1>
 
       <div>
-        <Input placeholder='First Name' {...register('firstName')} />
+        <label htmlFor='firstName' className='block text-sm font-medium text-gray-700 mb-1'>
+          First Name
+        </label>
+        <Input id='firstName' placeholder='First Name' {...register('firstName')} />
         {errors.firstName && <p className='text-red-500 text-sm'>{errors.firstName.message}</p>}
       </div>
 
       <div>
-        <Input placeholder='Last Name' {...register('lastName')} />
+        <label htmlFor='lastName' className='block text-sm font-medium text-gray-700 mb-1'>
+          Last Name
+        </label>
+        <Input id='lastName' placeholder='Last Name' {...register('lastName')} />
         {errors.lastName && <p className='text-red-500 text-sm'>{errors.lastName.message}</p>}
       </div>
 
       <div>
-        <Input type='email' placeholder='Email' {...register('email')} />
+        <label htmlFor='email' className='block text-sm font-medium text-gray-700 mb-1'>
+          Email
+        </label>
+        <Input id='email' type='email' placeholder='you@example.com' {...register('email')} />
         {errors.email && <p className='text-red-500 text-sm'>{errors.email.message}</p>}
       </div>
 
       <div>
-        <Input type='password' placeholder='Password' {...register('password')} />
+        <label htmlFor='password' className='block text-sm font-medium text-gray-700 mb-1'>
+          Password
+        </label>
+        <Input id='password' type='password' placeholder='••••••••' {...register('password')} />
         {errors.password && <p className='text-red-500 text-sm'>{errors.password.message}</p>}
       </div>
 
       {serverError && <p className='text-red-500 text-sm'>{serverError}</p>}
 
-      <Button type='submit' disabled={isSubmitting}>
+      <Button type='submit' disabled={isSubmitting} className='bg-prepeat-orange hover:bg-orange-600 w-full sm:w-auto'>
         {isSubmitting ? 'Signing up...' : 'Sign Up'}
       </Button>
     </form>

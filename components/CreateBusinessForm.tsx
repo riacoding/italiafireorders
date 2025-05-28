@@ -47,16 +47,13 @@ export default function CreateBusinessForm() {
   const businessName = watch('businessName')
   const handle = watch('handle')
 
-  // Auto-generate handle from business name
   useEffect(() => {
     const slug = slugify(businessName || '', { lower: true, strict: true })
     if (slug && handle !== slug) {
       setValue('handle', slug)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessName])
+  }, [businessName, handle, setValue])
 
-  // Debounced availability check
   useEffect(() => {
     if (!handle) {
       setIsAvailable(null)
@@ -66,7 +63,7 @@ export default function CreateBusinessForm() {
     setIsChecking(true)
     const timer = setTimeout(async () => {
       try {
-        const { data } = await client.models.Merchant.get(
+        const { data } = await client.models.Merchant.listMerchantByHandle(
           { handle },
           { selectionSet: ['handle'], authMode: 'userPool' }
         )
@@ -108,6 +105,24 @@ export default function CreateBusinessForm() {
         console.log(errors)
       }
 
+      // Ensure merchant creation succeeded
+      if (!merchant?.id) {
+        throw new Error('Merchant creation returned no ID')
+      }
+
+      const { data: updatedUser, errors: userErrors } = await client.models.User.update(
+        {
+          id: userId,
+          merchantId: merchant.id,
+        },
+        { authMode: 'userPool' }
+      )
+
+      if (userErrors?.length) {
+        console.error('User update failed:', userErrors)
+        throw new Error(userErrors.map((e) => e.message).join(', '))
+      }
+
       setMerchant(merchant)
       setStep('link')
     } catch (err: any) {
@@ -118,15 +133,21 @@ export default function CreateBusinessForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4 max-w-md mx-auto'>
-      <h1 className='text-xl font-semibold'>Create your business</h1>
+      <h1 className='text-xl font-semibold text-prepeat-orange'>Create your business</h1>
 
       <div>
-        <Input placeholder='Business Name' {...register('businessName')} />
+        <label htmlFor='businessName' className='block text-sm font-medium text-gray-700 mb-1'>
+          Business Name
+        </label>
+        <Input id='businessName' placeholder='Business Name' {...register('businessName')} />
         {errors.businessName && <p className='text-red-500 text-sm'>{errors.businessName.message}</p>}
       </div>
 
       <div>
-        <Input placeholder='Handle' {...register('handle')} />
+        <label htmlFor='handle' className='block text-sm font-medium text-gray-700 mb-1'>
+          Business Handle
+        </label>
+        <Input id='handle' placeholder='e.g. tasty-truck' {...register('handle')} />
         {errors.handle && <p className='text-red-500 text-sm'>{errors.handle.message}</p>}
         {handle && (
           <p
@@ -143,7 +164,11 @@ export default function CreateBusinessForm() {
 
       {serverError && <p className='text-red-500 text-sm'>{serverError}</p>}
 
-      <Button type='submit' disabled={isSubmitting || !isAvailable}>
+      <Button
+        type='submit'
+        disabled={isSubmitting || !isAvailable}
+        className='bg-prepeat-orange hover:bg-orange-600 w-full sm:w-auto'
+      >
         {isSubmitting ? 'Creating...' : 'Create Business'}
       </Button>
     </form>
