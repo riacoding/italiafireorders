@@ -67,7 +67,8 @@ export default function CreateBusinessForm() {
           { handle },
           { selectionSet: ['handle'], authMode: 'userPool' }
         )
-        setIsAvailable(!data)
+        console.log('list merchant', data)
+        setIsAvailable(!data[0])
       } catch {
         setIsAvailable(null)
       } finally {

@@ -4,11 +4,15 @@ import { useRouter } from 'next/navigation'
 import { ShoppingCart } from 'lucide-react'
 import { useCart } from '@/components/CartContext' // adjust path if needed
 import { useEffect, useState } from 'react'
+import { usePublicMerchant } from './MerchantPublicContext'
+import { useMenu } from '@/app/(public)/menus/[handle]/[loc]/MenuProvider'
 
 export default function CartIcon() {
   const [itemCount, setItemCount] = useState(0)
   const router = useRouter()
   const { items } = useCart()
+  const { merchant } = usePublicMerchant()
+  const { menu } = useMenu()
 
   useEffect(() => {
     const count = items.reduce((total, item) => total + item.quantity, 0)
@@ -17,7 +21,11 @@ export default function CartIcon() {
 
   return (
     <div className='relative flex items-center'>
-      <button onClick={() => router.push('/cart')} aria-label='Cart' className='hover:text-gray-600 transition'>
+      <button
+        onClick={() => router.push(`/menus/${merchant?.handle}/${menu.locationId}/cart`)}
+        aria-label='Cart'
+        className='hover:text-gray-600 transition'
+      >
         <ShoppingCart className='w-8 h-8' />
       </button>
       {itemCount > 0 && (

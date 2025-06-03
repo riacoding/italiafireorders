@@ -1,6 +1,7 @@
 import { SQSHandler } from 'aws-lambda'
 import { isDuplicate, markProcessed } from './util'
-import { createOrder, fulfillmentUpdated, updateOrder } from './hookHandlers'
+import { createOrder, fulfillmentUpdated, getMerchant, getSquareClient, updateOrder } from './hookHandlers'
+import { SquareClient } from 'square'
 
 type SquareEventPayload = {
   merchant_id: string
@@ -9,22 +10,22 @@ type SquareEventPayload = {
   data: any
 }
 
-type EventHandler = (data: any, eventId: string, merchant_id: string) => Promise<void>
+type EventHandler = (data: any, eventId: string, merchant_id: string, squareClient: SquareClient) => Promise<void>
 
 const handlers: Record<string, EventHandler> = {
-  'order.created': async (data, eventId, merchant_id) => {
+  'order.created': async (data, eventId, merchant_id, squareClient) => {
     console.log(`🆕 Handling order.created: [${eventId}] ${JSON.stringify(data, null, 2)}`)
-    await createOrder(data.id, eventId, merchant_id)
+    await createOrder(data.id, eventId, merchant_id, squareClient)
   },
 
-  'order.updated': async (data, eventId, merchant_id) => {
+  'order.updated': async (data, eventId, merchant_id, squareClient) => {
     console.log(`🔄 Handling order.updated: [${eventId}] ${JSON.stringify(data, null, 2)}`)
-    await updateOrder(data.id, eventId, merchant_id)
+    await updateOrder(data.id, eventId, merchant_id, squareClient)
   },
 
-  'order.fulfillment.updated': async (data, eventId, merchant_id) => {
+  'order.fulfillment.updated': async (data, eventId, merchant_id, squareClient) => {
     console.log(`🔄 Handling order.fulfillment.updated: [${eventId}] ${JSON.stringify(data, null, 2)}`)
-    await fulfillmentUpdated(data.object.order_fulfillment_updated, eventId, merchant_id)
+    await fulfillmentUpdated(data.object.order_fulfillment_updated, eventId, merchant_id, squareClient)
   },
 
   'payment.created': async (data, eventId, merchant_id) => {
@@ -44,7 +45,7 @@ export const handler: SQSHandler = async (event, context) => {
 
       const { event_id, type, data, merchant_id } = payload
       console.log(`Lambda RequestId: ${context.awsRequestId}, event_id: ${event_id}`)
-      console.log(`📦** Processing event_id: ${event_id}, type: ${type}`)
+      console.log(`📦** Processing event_id: ${event_id}, type: ${type}, event:${JSON.stringify(event, null, 2)}`)
 
       if (await isDuplicate(event_id)) {
         console.log(`🛑 Skipping duplicate event_id: ${event_id}`)
@@ -53,7 +54,9 @@ export const handler: SQSHandler = async (event, context) => {
 
       const handlerFn = handlers[type]
       if (handlerFn) {
-        await handlerFn(data, event_id, merchant_id)
+        const merchant = await getMerchant(merchant_id)
+        const squareClient = getSquareClient(merchant.accessToken)
+        await handlerFn(data, event_id, merchant_id, squareClient)
         await markProcessed(event_id)
       } else {
         console.warn(`⚠️ No handler registered for event type: ${type}`)

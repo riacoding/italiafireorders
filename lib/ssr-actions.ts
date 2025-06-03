@@ -49,6 +49,12 @@ import {
   SquareOrder,
   SecureReceipt,
   SquareAuthResponse,
+  Merchant,
+  UpdateMerchantInput,
+  UpdateMenuInput,
+  merchantSelectionSet,
+  MerchantSelected,
+  PublicMerchant,
 } from '@/types'
 import { extractReceiptItems, orderNumberToTicket } from './utils'
 import { SquareClient, SquareEnvironment } from 'square'
@@ -70,6 +76,17 @@ export const isAuth = async () => {
     return true
   }
   return false
+}
+
+export async function getSquareClient(
+  accessToken: string,
+  environment: SquareEnvironment = SquareEnvironment.Sandbox
+): Promise<SquareClient | null> {
+  if (!accessToken) return null
+  return new SquareClient({
+    token: accessToken,
+    environment,
+  })
 }
 
 export const fetchMenus = async () => {
@@ -135,8 +152,17 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
   return data[0]
 }
 
-export async function updateSquareOrder(orderId: string, locationId: string, newState: FulfillmentState) {
+export async function updateSquareOrder(
+  orderId: string,
+  locationId: string,
+  newState: FulfillmentState,
+  merchantId: string
+) {
   console.log(`Updating order ${orderId} at Location:${locationId} to ${newState.state}`)
+  const merchant = await getServerMerchant(merchantId)
+  if (!merchant) return
+  const client = await getSquareClient(merchant.accessToken)
+  if (!client) return
 
   try {
     // Step 1: Fetch existing order
@@ -325,7 +351,7 @@ export async function getSquareOrderByOrderNumber(
     const order: SquareOrder = typeof raw === 'string' ? JSON.parse(raw) : ''
 
     const menuSlug = order?.metadata?.menuSlug
-    const accessToken = order?.metadata?.accessToken
+    const squareOrderToken = order?.metadata?.orderToken
     const menu = menuSlug ? await getCurrentMenu(menuSlug) : null
     if (menu) {
       const { data: menuItems } = await menu.menuItems()
@@ -338,7 +364,7 @@ export async function getSquareOrderByOrderNumber(
       }
       console.log('name overrides', nameOverrides)
       const receiptItems = extractReceiptItems(order, nameOverrides)
-      if (accessToken === orderToken) {
+      if (squareOrderToken === orderToken) {
         return receiptItems
       }
       return null
@@ -396,7 +422,7 @@ export async function saveMenu(input: MenuInput): Promise<{ id: string | null }>
   return { id: data?.id ?? null }
 }
 
-export async function saveMenuItemsForMenu(menuId: string, selectedCatalogItemIds: string[]) {
+export async function saveMenuItemsForMenu(menuId: string, selectedCatalogItemIds: string[], merchantId: string) {
   const { data: existingItems, errors } = await cookieBasedClient.models.MenuItem.list({
     filter: { menuId: { eq: menuId } },
     authMode: 'userPool',
@@ -426,6 +452,7 @@ export async function saveMenuItemsForMenu(menuId: string, selectedCatalogItemId
       cookieBasedClient.models.MenuItem.create(
         {
           menuId,
+          merchantId,
           catalogItemId,
           isFeatured: false,
           sortOrder: index,
@@ -449,6 +476,7 @@ export async function createMenuItem(input: CreateMenuItemInput): Promise<SafeMe
   const { data, errors } = await cookieBasedClient.models.MenuItem.create(
     {
       menuId: input.menuId,
+      merchantId: input.merchantId,
       catalogItemId: input.catalogItemId,
       isFeatured: input.isFeatured ?? false,
       sortOrder: input.sortOrder ?? 0,
@@ -464,6 +492,7 @@ export async function createMenuItem(input: CreateMenuItemInput): Promise<SafeMe
   return {
     id: data!.id,
     menuId: data!.menuId,
+    merchantId: data!.merchantId,
     catalogItemId: data!.catalogItemId,
     s3ImageKey: data!.s3ImageKey,
     customName: data!.customName,
@@ -498,12 +527,15 @@ type ItemWithModifiers = {
   modifierLists: SquareModifierList[]
 }
 
-export async function getCatalogItems(): Promise<HydratedCatalog[] | []> {
+export async function getCatalogItems(merchantId: string): Promise<HydratedCatalog[] | []> {
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
   try {
-    const { data, errors } = await cookieBasedClient.models.CatalogItem.list({
-      authMode,
-    })
+    const { data, errors } = await cookieBasedClient.models.CatalogItem.listCatalogItemByMerchantId(
+      { merchantId },
+      {
+        authMode,
+      }
+    )
     if (errors && errors.length > 0) {
       console.error('Error fetching menus:', errors)
       throw new Error(errors.map((e) => e.message).join(', '))
@@ -628,11 +660,12 @@ export async function updateMenuItem(input: {
   return data?.id
 }
 
-export async function getSquareItemsWithModifiers(): Promise<ItemWithModifiers[]> {
+export async function getSquareItemsWithModifiers(merchant: Merchant): Promise<ItemWithModifiers[]> {
+  const token = merchant.accessToken
   const res = await fetch(`${SQUARE_BASE_URL}/catalog/list`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${SQUARE_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     cache: 'no-store',
@@ -718,8 +751,10 @@ export async function getSquareItemsWithModifiers(): Promise<ItemWithModifiers[]
   })
 }
 
-export async function syncMenuItems() {
-  const itemsWithModifiers = await getSquareItemsWithModifiers()
+export async function syncMenuItems(merchant: PublicMerchant) {
+  const serverMerchant = await getServerMerchant(merchant.id)
+  if (!serverMerchant) return
+  const itemsWithModifiers = await getSquareItemsWithModifiers(serverMerchant)
 
   console.log('items to sync', itemsWithModifiers)
 
@@ -738,6 +773,7 @@ export async function syncMenuItems() {
     // Save into local DynamoDB catalog
     const catalogItem = await upsertCatalogItem({
       squareItemId: item.id,
+      merchantId: merchant.id,
       catalogVariationId,
       catalogData,
     })
@@ -757,9 +793,11 @@ export async function createDefaultMenu() {}
 
 export async function upsertCatalogItem({
   squareItemId,
+  merchantId,
   catalogVariationId,
   catalogData,
 }: {
+  merchantId: string
   squareItemId: string
   catalogVariationId: string
   catalogData: any
@@ -802,7 +840,9 @@ export async function upsertCatalogItem({
     const { data: createdItem, errors: createErrors } = await cookieBasedClient.models.CatalogItem.create(
       {
         id: squareItemId,
+        merchantId: merchantId,
         squareItemId,
+        catalogVariationId: catalogVariationId,
         catalogData: catalogDataString,
       },
       { authMode: 'userPool' }
@@ -817,9 +857,9 @@ export async function upsertCatalogItem({
   }
 }
 
-export async function getAuthUrl(handle: string): Promise<SquareAuthResponse> {
-  console.log('getting auth with handle:', handle)
-  const { data, errors } = await cookieBasedClient.queries.getSquareAuthUrl({ handle })
+export async function getAuthUrl(merchantId: string): Promise<SquareAuthResponse> {
+  console.log('getting auth with merchantId:', merchantId)
+  const { data, errors } = await cookieBasedClient.queries.getSquareAuthUrl({ merchantId })
 
   if (errors?.length) {
     console.error('Error fetching auth url:', errors)
@@ -827,6 +867,70 @@ export async function getAuthUrl(handle: string): Promise<SquareAuthResponse> {
   }
 
   return { url: data?.url || null, auth: data?.auth || null }
+}
+
+export async function getUserBySub(sub: string) {
+  const { data, errors } = await cookieBasedClient.models.User.listUserBySub({ sub }, { authMode: 'userPool' })
+  if (errors?.length) {
+    console.error('Error fetching user:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+  return data[0]
+}
+
+export async function getMerchant(merchantId: string): Promise<PublicMerchant | null> {
+  const { data, errors } = await cookieBasedClient.models.Merchant.get(
+    { id: merchantId },
+    { selectionSet: merchantSelectionSet, authMode: 'userPool' }
+  )
+  if (errors?.length) {
+    console.error('Error fetching merchant:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+  return data
+}
+
+export async function getServerMerchant(merchantId: string): Promise<Merchant | null> {
+  const { data, errors } = await cookieBasedClient.models.Merchant.get({ id: merchantId }, { authMode: 'userPool' })
+  if (errors?.length) {
+    console.error('Error fetching merchant:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+  return data
+}
+
+export async function getPublicMerchantFromHandle(handle: string): Promise<MerchantSelected | undefined> {
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
+  const { data, errors } = await cookieBasedClient.models.Merchant.listMerchantByHandle(
+    { handle },
+    { selectionSet: merchantSelectionSet, authMode }
+  )
+  if (errors?.length) {
+    console.error('Error fetching merchant:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+  return data[0]
+}
+
+export async function updateMenu(updateMenuInput: UpdateMenuInput) {
+  const { data, errors } = await cookieBasedClient.models.Menu.update({ ...updateMenuInput }, { authMode: 'userPool' })
+  if (errors?.length) {
+    console.error('Error fetching merchant:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+  return data
+}
+
+export async function updateMerchant(updateMerchantInput: UpdateMerchantInput) {
+  const { data, errors } = await cookieBasedClient.models.Merchant.update(
+    { ...updateMerchantInput },
+    { authMode: 'userPool' }
+  )
+  if (errors?.length) {
+    console.error('Error fetching merchant:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+  return data
 }
 
 function getModifierListsForItem(item: SquareItem, all: Record<string, SquareModifierList>): SquareModifierList[] {

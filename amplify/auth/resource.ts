@@ -9,7 +9,7 @@ export const auth = defineAuth({
   loginWith: {
     email: true,
   },
-  groups: ['vendor'],
+  groups: ['vendor', 'admin'],
   triggers: {
     postConfirmation,
   },

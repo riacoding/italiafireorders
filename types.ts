@@ -2,21 +2,28 @@ import { type Schema } from '@/amplify/data/resource'
 import { SelectionSet } from 'aws-amplify/data'
 
 export type Menu = Schema['Menu']['type']
-
+export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
 export type MenuItem = Schema['MenuItem']['type']
+export type UpdateMenuInput = Schema['Menu']['updateType']
 export type CatalogItem = Schema['CatalogItem']['type']
 export type Merchant = Schema['Merchant']['type']
-
+export type UpdateMerchantInput = Schema['Merchant']['updateType']
 export type SafeMenuItem = RemoveFunctions<Schema['MenuItem']['type']>
 
 export type MenuInput = {
   id?: string
   name: string
   locationId: string
+  merchantId: string
   logo?: string
   theme?: object | null
   isActive: boolean
 }
+
+export const merchantSelectionSet = ['handle', 'id', 'locationIds', 's3ItemKey', 'businessName'] as const
+export type MerchantSelectionSet = (typeof merchantSelectionSet)[number]
+export type MerchantSelected = Pick<Schema['Merchant']['type'], MerchantSelectionSet>
+export type PublicMerchant = Pick<Schema['Merchant']['type'], MerchantSelectionSet>
 
 export const menuItemSelectionSet = ['id', 'menuId', 'catalogItemId', 'customName', 'sortOrder', 'isFeatured'] as const
 
@@ -44,7 +51,7 @@ export interface NormalizedTopping {
 }
 
 export type SecureReceipt = {
-  accessToken?: string
+  orderToken?: string
   receiptItems: ReceiptItem[]
 }
 
@@ -52,7 +59,7 @@ export type ReceiptItem = {
   name: string
   quantity: number
   basePrice: number
-  accessToken?: string
+  orderToken?: string
   totalPrice: number
   modifiers: {
     name: string
@@ -67,6 +74,7 @@ export type RemoveFunctions<T> = {
 
 export type CreateMenuItemInput = {
   menuId: string
+  merchantId: string
   catalogItemId: string
   isFeatured?: boolean
   sortOrder?: number
@@ -200,7 +208,7 @@ export type SquareOrder = {
   metadata?: {
     menuSlug?: string
     ticketNumber?: string
-    accessToken?: string
+    orderToken?: string
   }
   totalMoney?: Money
   totalTaxMoney?: Money

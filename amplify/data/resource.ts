@@ -35,9 +35,15 @@ const schema = a
         tokenrefreshedAt: a.datetime(),
         businessName: a.string().required(),
         locationIds: a.string().array(),
+        s3ItemKey: a.string(),
       })
       .secondaryIndexes((index) => [index('squareMerchantId'), index('handle')])
-      .authorization((allow) => [allow.owner(), allow.authenticated().to(['create', 'read']), allow.groups(['admin'])]),
+      .authorization((allow) => [
+        allow.owner(),
+        allow.guest().to(['read']),
+        allow.authenticated().to(['create', 'read']),
+        allow.groups(['admin']),
+      ]),
     Order: a
       .model({
         merchantId: a.id().required(),
@@ -53,7 +59,7 @@ const schema = a
       .authorization((allow) => [
         allow.guest().to(['read']),
         allow.authenticated().to(['read']),
-        allow.groups(['admin']),
+        allow.groups(['admin', 'vendor']),
       ]),
     TicketCounter: a
       .model({
@@ -70,10 +76,11 @@ const schema = a
         squareItemId: a.string().required(), // Square object ID
         catalogVariationId: a.string(),
         s3ItemKey: a.string(),
+        merchantId: a.id().required(),
         catalogData: a.json().required(), // Full Square catalog JSON
       })
-      .secondaryIndexes((index) => [index('squareItemId')])
-      .authorization((allow) => [allow.groups(['admin']), allow.guest().to(['read'])]),
+      .secondaryIndexes((index) => [index('squareItemId'), index('merchantId')])
+      .authorization((allow) => [allow.groups(['vendor', 'admin']), allow.guest().to(['read'])]),
 
     Phone: a
       .model({
@@ -92,10 +99,12 @@ const schema = a
         id: a.id().required(),
         merchantId: a.id().required(),
         name: a.string().required(),
+        squareLocationId: a.string(),
         locationId: a.string().required(),
         logo: a.string(),
         isActive: a.boolean().default(false),
         theme: a.json(),
+        useImages: a.boolean().default(true),
         menuItems: a.hasMany('MenuItem', 'menuId'), // 🆕 one-to-many
       })
       .secondaryIndexes((index) => [index('locationId'), index('merchantId')])
@@ -137,7 +146,7 @@ const schema = a
       .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
     getSquareAuthUrl: a
       .query()
-      .arguments({ handle: a.string().required() })
+      .arguments({ merchantId: a.string().required() })
       .returns(a.ref('SquareAuthResponse'))
       .authorization((allow) => [allow.guest(), allow.authenticated()])
       .handler(a.handler.function(squareAuth)),

@@ -92,12 +92,6 @@ backend.webhookProcessor.addEnvironment('IDEMPOTENCY_TABLE', squareWebhook.idemp
 
 squareWebhook.squareTopic.grantPublish(backend.webhook.resources.lambda)
 
-userPool.addGroup('Admin', {
-  precedence: 0,
-  description: 'Admin group',
-  groupName: 'admin',
-})
-
 backend.counter.resources.lambda.addToRolePolicy(
   new PolicyStatement({
     actions: ['dynamodb:UpdateItem', 'dynamodb:GetItem'],

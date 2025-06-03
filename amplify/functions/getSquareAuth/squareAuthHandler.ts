@@ -8,12 +8,12 @@ const SQUARE_APP_ID = process.env.SQUARE_APP_ID!
 export const handler = async (event: any) => {
   console.log('getSquareAuth event', event)
 
-  const handle = event.arguments.handle as string
+  const merchantId = event.arguments.merchantId as string
 
   // Generate a jwt token
   const state = jwt.sign(
     {
-      handle,
+      merchantId,
       nonce: crypto.randomBytes(32).toString('hex'),
     },
     process.env.OAUTH_STATE_SECRET!,
@@ -31,11 +31,14 @@ export const handler = async (event: any) => {
   console.log('redirectURI', redirectUri)
 
   const scopes = [
-    'ITEMS_READ',
     'MERCHANT_PROFILE_READ',
-    'PAYMENTS_WRITE_ADDITIONAL_RECIPIENTS',
-    'PAYMENTS_WRITE',
+    'MERCHANT_PROFILE_WRITE',
+    'ITEMS_READ',
+    'ITEMS_WRITE',
+    'ORDERS_READ',
+    'ORDERS_WRITE',
     'PAYMENTS_READ',
+    'PAYMENTS_WRITE',
   ]
 
   const url =

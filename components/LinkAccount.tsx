@@ -13,10 +13,15 @@ export default function LinkAccount() {
 
   useEffect(() => {
     async function getUrl() {
-      if (merchant?.handle) {
-        const { url, auth } = await getAuthUrl(merchant.handle)
+      if (merchant?.id) {
+        const { url, auth } = await getAuthUrl(merchant.id)
         setUrl(url)
         setAuth(auth)
+
+        // Set the oauth_state cookie here
+        if (auth) {
+          document.cookie = `oauth_state=${auth}; Path=/; Secure; SameSite=Lax`
+        }
       }
     }
     getUrl()
@@ -37,6 +42,7 @@ export default function LinkAccount() {
 
       <div className='text-center'>
         <p className='text-gray-600 mb-4'>To accept payments and manage orders, please link your Square account.</p>
+        <p>{url}</p>
         <Button size='lg' className='w-full bg-prepeat-orange hover:bg-orange-600' disabled={!url} asChild>
           <Link href={url || '#'} aria-disabled={!url}>
             Link Square

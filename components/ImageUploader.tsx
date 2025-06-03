@@ -9,10 +9,11 @@ import '@aws-amplify/ui-react/styles.css'
 type Props = {
   onUpload: (key: string) => void
   label?: string
+  path?: string
   existingKey?: string
 }
 
-export default function ImageUploader({ onUpload, label = 'Upload Image', existingKey }: Props) {
+export default function ImageUploader({ onUpload, label = 'Upload Image', path = 'items/', existingKey }: Props) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
 
@@ -46,11 +47,14 @@ export default function ImageUploader({ onUpload, label = 'Upload Image', existi
       <label className='block font-semibold'>{label}</label>
       <FileUploader
         acceptedFileTypes={['image/*']}
-        path='items/'
+        path={path}
         maxFileCount={1}
         isResumable
         processFile={processFile}
         onUploadSuccess={handleUploadSuccess}
+        onUploadError={(err) => {
+          console.error('Upload failed:', err)
+        }}
       />
       {previewUrl && (
         <div className='mt-2'>

@@ -23,12 +23,20 @@ const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env)
 Amplify.configure(resourceConfig, libraryOptions)
 const amplifyClient = generateClient<Schema>()
 
-//Square Client
-const client = new SquareClient({
-  token: process.env.SQUARE_ACCESS_TOKEN!,
-  // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
-  environment: SquareEnvironment.Sandbox,
-})
+export function getSquareClient(accessToken: string) {
+  return new SquareClient({
+    token: accessToken,
+    environment: SquareEnvironment.Sandbox,
+  })
+}
+export async function getMerchant(squareMerchantId: string) {
+  const { data, errors } = await amplifyClient.models.Merchant.listMerchantBySquareMerchantId({ squareMerchantId })
+  if (errors && errors.length > 0) {
+    console.error('Amplify Get Merchant Error:', JSON.stringify(errors))
+    throw new Error(errors.map((e) => e.message).join(', '))
+  }
+  return data[0]
+}
 
 function normalizeOrderStatus(squareState: string | undefined): 'COMPLETED' | 'OPEN' | undefined {
   if (squareState === undefined) return undefined
@@ -72,9 +80,10 @@ async function updateFulfillmentStatus(orderId: string, newFulfillmentStatus: st
   console.log(`✅ Amplify order updated: ${data?.id} → ${data?.fulfillmentStatus}`)
 }
 
-export async function createOrder(orderId: string, eventId: string, merchant_id: string) {
+export async function createOrder(orderId: string, eventId: string, merchant_id: string, squareClient: SquareClient) {
   console.log(`🆕 [${eventId}] Handling order.created:${orderId}`)
-  const { order, errors: sqErrors } = await client.orders.get({ orderId })
+  //TODO: swap merchant_Id (squareMerchant_Id) for internal merchantId
+  const { order, errors: sqErrors } = await squareClient.orders.get({ orderId })
 
   console.log('fetched order', JSON.stringify(sanitizeBigInts(order), null, 2))
 
@@ -118,6 +127,7 @@ export async function createOrder(orderId: string, eventId: string, merchant_id:
       },
       source: order.source?.name?.includes('Sandbox') ? 'In Person' : ORDER_SOURCE,
       recipient: order?.fulfillments[0].pickupDetails?.recipient,
+      client: squareClient,
     })
     console.log(`${order?.id} order source updated`)
   }
@@ -142,7 +152,12 @@ export async function createOrder(orderId: string, eventId: string, merchant_id:
   return amplifyOrder?.id
 }
 
-export async function fulfillmentUpdated(update: SquareFulfillmentUpdate, eventId: string, merchant_id: string) {
+export async function fulfillmentUpdated(
+  update: SquareFulfillmentUpdate,
+  eventId: string,
+  merchant_id: string,
+  squareClient: SquareClient
+) {
   console.log(`🆕 [${eventId}] Handling order.fulfillment.updated: ${JSON.stringify(update)}`)
   const orderId = update.order_id
   const orderState = update.state
@@ -151,8 +166,8 @@ export async function fulfillmentUpdated(update: SquareFulfillmentUpdate, eventI
   await updateFulfillmentStatus(orderId, status, orderState)
 }
 
-export async function updateOrder(orderId: string, eventId: string, merchant_id: string) {
-  const { order: rawOrder, errors: sqErrors } = await client.orders.get({ orderId })
+export async function updateOrder(orderId: string, eventId: string, merchant_id: string, squareClient: SquareClient) {
+  const { order: rawOrder, errors: sqErrors } = await squareClient.orders.get({ orderId })
   const order = sanitizeBigInts(rawOrder)
   console.log(`🔄 [${eventId}] Handling order.updated: ${JSON.stringify(order)}`)
   if (sqErrors) {
@@ -188,6 +203,7 @@ export async function updateOrder(orderId: string, eventId: string, merchant_id:
 
     console.log('******New ORDER with TICKET******', order)
 
+    //update console app order
     if (
       order &&
       order?.id &&
@@ -205,6 +221,7 @@ export async function updateOrder(orderId: string, eventId: string, merchant_id:
           fullFillmentId: order.fulfillments[0].uid,
         },
         source: 'In Person',
+        client: squareClient,
       })
       console.log(`${order?.id} order source updated`)
     }
@@ -285,7 +302,7 @@ async function sendOrderReadyText(phone: string, optIn: boolean, ticket: string)
     return
   }
   const orderNumber = ticket.split('-')[1]
-  const message = `🎉 Your ItaliaFire order #${orderNumber} is ready! Pick it up now.`
+  const message = `🎉 Your order #${orderNumber} is ready! Pick it up now.`
 
   await twilioClient.messages.create({
     to: phone,
@@ -358,6 +375,7 @@ export const updateSquareOrder = async ({
   referenceId,
   source,
   recipient,
+  client,
 }: UpdateOrderParams): Promise<void> => {
   console.log('updating Square Order', order.id, order.fullFillmentId, order.referenceId)
   try {

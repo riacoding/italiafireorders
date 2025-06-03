@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto'
 import { isAuth } from '@/lib/ssr-actions'
 
 const client = new SquareClient({
-  token: process.env.SQUARE_ACCESS_TOKEN!,
+  token: 'EAAAl_DGcV2y8VMPnsVsRGKtkfD3i1XEO70Mdu12roQyWjhP-j6yHTMZDwWwB8qq', //process.env.SQUARE_ACCESS_TOKEN!,
   // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
   environment: SquareEnvironment.Sandbox,
   version: '2025-04-16',
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
   try {
     const body = await req.json()
-    const { cartItems, locationId, menuSlug, accessToken, timeZone } = body
+    const { cartItems, locationId, menuSlug, orderToken, timeZone, backLink } = body
 
     const { data: ticket } = await cookieBasedClient.queries.getTicket(
       { locationId: locationId, timeZone: timeZone },
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       catalogObjectId: item.catalogVariationId,
       quantity: item.quantity.toString(),
       name: item.customName || item.name,
-      note: 'No meat',
+      note: 'user notes',
       basePriceMoney: {
         amount: BigInt(item.price), // Ensure this is the correct price in cents
         currency: 'USD',
@@ -85,12 +85,12 @@ export async function POST(req: NextRequest) {
         metadata: {
           menuSlug: menuSlug,
           ticketNumber: displayTicketNumber,
-          accessToken: accessToken,
+          orderToken: orderToken,
           timeZone: timeZone,
         },
       },
       checkoutOptions: {
-        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/thankyou?order=${ticket?.ticketNumber}`,
+        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}${backLink}/thankyou?order=${ticket?.ticketNumber}`,
         allowTipping: true,
       },
     })

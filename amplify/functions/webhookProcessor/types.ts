@@ -1,3 +1,5 @@
+import { SquareClient } from 'square'
+
 export type SquareOrderCreatedWebhook = {
   merchant_id: string
   type: 'order.created'
@@ -129,6 +131,7 @@ export type UpdateOrderParams = {
   recipient?: {
     displayName?: string | null
   }
+  client: SquareClient
 }
 
 export type SquareWebhookEvent =

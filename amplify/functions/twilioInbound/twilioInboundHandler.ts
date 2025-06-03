@@ -19,6 +19,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   const message = parsed.Body?.toString().trim().toLowerCase()
   const from = parsed.From?.toString()
 
+  console.log('twilio message', rawBody, message)
+
   let reply = 'Sorry, we couldn’t find a menu for that code. Please try again.'
 
   if (message) {
@@ -43,7 +45,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     body: `<Response>
       <Message>
         ${reply}
-        <Media>https://main.d1tk6naxmgg6kb.amplifyapp.com/ItaliaFire.png</Media>
+       
       </Message>
     </Response>`,
   }
