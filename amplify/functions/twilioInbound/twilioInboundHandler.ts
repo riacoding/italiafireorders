@@ -33,7 +33,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     if (menu[0]?.isActive) {
-      reply = `Here’s today’s menu: https://main.d1tk6naxmgg6kb.amplifyapp.com/menu/${menu[0].locationId}`
+      reply = `Here’s today’s menu: ${env.SITE_URL}/menu/${menu[0].locationId}`
     }
   }
 
@@ -43,7 +43,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     body: `<Response>
       <Message>
         ${reply}
-        <Media>https://main.d1tk6naxmgg6kb.amplifyapp.com/ItaliaFire.png</Media>
       </Message>
     </Response>`,
   }
