@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto'
 import { isAuth } from '@/lib/ssr-actions'
 
 const client = new SquareClient({
+  //TODO: make lookup from merchantId internal
   token: 'EAAAl_DGcV2y8VMPnsVsRGKtkfD3i1XEO70Mdu12roQyWjhP-j6yHTMZDwWwB8qq', //process.env.SQUARE_ACCESS_TOKEN!,
   // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
   environment: SquareEnvironment.Sandbox,
