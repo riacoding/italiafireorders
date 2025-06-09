@@ -9,6 +9,14 @@ import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { Amplify } from 'aws-amplify'
+import { generateClient } from 'aws-amplify/data'
+import type { Schema } from '../../amplify/data/resource'
+import outputs from '../../amplify_outputs.json'
+
+Amplify.configure(outputs)
+
+const client = generateClient<Schema>()
 
 export default function ThankYouClient() {
   const searchParams = useSearchParams()
@@ -42,6 +50,30 @@ export default function ThankYouClient() {
 
     fetchOrder()
   }, [])
+
+  useEffect(() => {
+    if (!orderAccess) return
+
+    const sub = client.models.Order.observeQuery({
+      authMode: 'identityPool',
+      filter: { referenceId: { eq: orderAccess } },
+    }).subscribe({
+      next: async ({ items }) => {
+        if (items.length > 0) {
+          const orderToken = localStorage.getItem(orderAccess)
+          if (!orderToken) return
+          const res = await getSquareOrderByOrderNumber(orderAccess, orderToken)
+          if (res) {
+            setOrder(res)
+            localStorage.removeItem(orderAccess)
+          }
+        }
+      },
+      error: (err: any) => console.error('observeQuery error', err),
+    })
+
+    return () => sub.unsubscribe()
+  }, [orderAccess])
 
   const handleContactSubmit = async () => {
     await updateOrderContact(normalizePhoneForStorage(rawPhone), orderNumber)

@@ -349,28 +349,6 @@ export async function getSquareOrderByOrderNumber(
     console.error(`Error fetching order ${orderNumber} referenceId: ${referenceId}`, err)
     return null
   }
-
-  // const res = await fetch('https://connect.squareupsandbox.com/v2/orders/search', {
-  //   method: 'POST',
-  //   headers: {
-  //     Authorization: `Bearer ${token}`,
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify({
-  //     location_ids: [locationId],
-  //     query: {
-  //       filter: {
-  //         reference_id: {
-  //           exact: referenceId,
-  //         },
-  //       },
-  //     },
-  //   }),
-  //   cache: 'no-store',
-  // })
-
-  // const json = await res.json()
-  // return json.orders?.[0] || null
 }
 
 export async function saveMenu(input: MenuInput): Promise<{ id: string | null }> {
