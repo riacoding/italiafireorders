@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import '@/app/globals.css'
-import Providers from '@/components/Providers'
 import CartIcon from '@/components/CartIcon'
 import Image from 'next/image'
 import Link from 'next/link'
 import MobileMenu from '@/components/MobileMenu'
 import HeaderLogo from '@/components/HeaderLogo'
+import AdminProviders from '@/components/AdminProviders'
 
 export const metadata: Metadata = {
   title: 'Prepeat.io',
@@ -20,14 +20,13 @@ export default async function PrepeatLayout({
   const year = new Date().getFullYear()
 
   return (
-    <Providers>
+    <AdminProviders>
       {/* Header */}
       <header className='bg-white border-b border-gray-200 shadow-sm p-4 flex justify-between items-center'>
         <Link href='/home'>
           <HeaderLogo />
         </Link>
         <div className='flex align-center justify-center mt-5  gap-5'>
-          <CartIcon />
           <MobileMenu isLoggedIn={true} />
         </div>
       </header>
@@ -42,6 +41,6 @@ export default async function PrepeatLayout({
           <p>login</p>
         </Link>
       </footer>
-    </Providers>
+    </AdminProviders>
   )
 }

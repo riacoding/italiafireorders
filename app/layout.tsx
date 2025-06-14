@@ -8,6 +8,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import MobileMenu from '@/components/MobileMenu'
 import HeaderLogo from '@/components/HeaderLogo'
+import { SignupProvider } from '@/components/SignupContext'
+import { Toaster } from '@/components/ui/toaster'
 
 export const metadata: Metadata = {
   title: 'Prepeat.io',
@@ -22,8 +24,12 @@ export default async function RootLayout({
   const year = new Date().getFullYear()
 
   return (
-    <html lang='en'>
-      <body className='min-h-screen flex flex-col'>{children}</body>
-    </html>
+    <SignupProvider>
+      <html lang='en'>
+        <body className='min-h-screen flex flex-col'>
+          {children} <Toaster />{' '}
+        </body>
+      </html>
+    </SignupProvider>
   )
 }

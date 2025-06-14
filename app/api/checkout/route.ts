@@ -2,22 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookieBasedClient } from '@/util/amplify'
 import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
-import { isAuth } from '@/lib/ssr-actions'
-
-const client = new SquareClient({
-  //TODO: make lookup from merchantId internal
-  token: 'EAAAl_DGcV2y8VMPnsVsRGKtkfD3i1XEO70Mdu12roQyWjhP-j6yHTMZDwWwB8qq', //process.env.SQUARE_ACCESS_TOKEN!,
-  // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
-  environment: SquareEnvironment.Sandbox,
-  version: '2025-04-16',
-})
+import { getServerMerchant, isAuth } from '@/lib/ssr-actions'
 
 export async function POST(req: NextRequest) {
   //console.log('SQUARE_ACCESS_TOKEN length:', process.env.SQUARE_ACCESS_TOKEN?.length)
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
   try {
     const body = await req.json()
-    const { cartItems, locationId, menuSlug, orderToken, timeZone, backLink } = body
+    const { cartItems, locationId, menuSlug, orderToken, timeZone, backLink, merchantId } = body
+
+    const merchant = await getServerMerchant(merchantId)
+
+    const client = new SquareClient({
+      token: merchant?.accessToken,
+      // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
+      environment: SquareEnvironment.Sandbox,
+      version: '2025-04-16',
+    })
+
+    if (!cartItems || cartItems.length === 0) {
+      return NextResponse.json({ error: 'No items in cart' }, { status: 400 })
+    }
 
     const { data: ticket } = await cookieBasedClient.queries.getTicket(
       { locationId: locationId, timeZone: timeZone },

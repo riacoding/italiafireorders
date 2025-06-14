@@ -36,6 +36,7 @@ const schema = a
         businessName: a.string().required(),
         locationIds: a.string().array(),
         s3ItemKey: a.string(),
+        isLinked: a.boolean().default(false),
       })
       .secondaryIndexes((index) => [index('squareMerchantId'), index('handle')])
       .authorization((allow) => [

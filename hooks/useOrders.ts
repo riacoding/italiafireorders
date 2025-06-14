@@ -19,44 +19,45 @@ function normalizeOrders(items: Schema['Order']['type'][]): Order[] {
       const bDate = new Date(b.rawData?.createdAt ?? 0).getTime()
       return bDate - aDate
     })
+    .filter((o) => o.fulfillmentStatus === 'PROPOSED')
 }
 
 export function useOrders(merchantId: string, locationId: string) {
+  console.log('merchant and location', merchantId, locationId)
   const queryClient = useQueryClient()
   const queryKey = ['orders', merchantId, locationId]
-
+  const [orders, setOrders] = useState<Order[] | null>(null)
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
   const prevIds = useRef<Set<string>>(new Set())
 
-  // Initial fetch
-  const query = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const { data, errors } = await client.models.Order.list({
-        authMode: 'userPool',
-        filter: {
-          locationId: { eq: locationId },
-          fulfillmentStatus: { eq: 'PROPOSED' },
-        },
-      })
-      if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '))
-      return normalizeOrders(data)
-    },
-  })
+  // // Initial fetch
+  // const query = useQuery({
+  //   queryKey,
+  //   queryFn: async () => {
+  //     const { data, errors } = await client.models.Order.list({
+  //       authMode: 'userPool',
+  //       filter: {
+  //         locationId: { eq: locationId },
+  //         fulfillmentStatus: { eq: 'PROPOSED' },
+  //       },
+  //     })
+  //     if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '))
+  //     return normalizeOrders(data)
+  //   },
+  // })
 
   // Realtime updates
   useEffect(() => {
     const sub = client.models.Order.observeQuery({
       authMode: 'userPool',
       filter: {
-        merchantId: { eq: merchantId },
         locationId: { eq: locationId },
-        fulfillmentStatus: { eq: 'PROPOSED' },
       },
     }).subscribe({
       next: ({ items }) => {
         const normalized = normalizeOrders(items)
-
+        console.log('normalized orders', normalized)
+        setOrders(normalized)
         const currentIds = new Set(normalized.map((o) => o.id))
         const newIds = new Set<string>()
 
@@ -78,7 +79,7 @@ export function useOrders(merchantId: string, locationId: string) {
     })
 
     return () => sub.unsubscribe()
-  }, [merchantId, locationId, queryClient])
+  }, [merchantId, locationId])
 
-  return { ...query, newOrderIds }
+  return { orders, newOrderIds }
 }

@@ -1,51 +1,128 @@
-// app/components/SignupContext.tsx
 'use client'
 
 import { Merchant } from '@/types'
-import { createContext, useContext, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { createContext, useContext, useState, useMemo, useEffect, ReactNode } from 'react'
 
-// Types for each step of the signup flow
-type SignupStep = 'signup' | 'confirm' | 'business' | 'link' | 'done'
+export type SignupStep = 'signup' | 'confirm' | 'business' | 'link'
 
 interface SignupContextType {
-  email: string | null
-  setEmail: (email: string | null) => void
-  userId: string | null
-  setUserId: (id: string | null) => void
-  merchant: Merchant | null
-  setMerchant: (merchant: Merchant | null) => void
   currentStep: SignupStep
   setStep: (step: SignupStep) => void
+
+  email: string
+  setEmail: (email: string) => void
+
+  password: string
+  setPassword: (password: string) => void
+
+  userId: string
+  setUserId: (userId: string) => void
+
+  merchant: Merchant | null
+  setMerchant: (merchant: Merchant | null) => void
 }
 
 const SignupContext = createContext<SignupContextType | undefined>(undefined)
 
-export function SignupProvider({ children }: { children: React.ReactNode }) {
-  const [email, setEmail] = useState<string | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
+export function SignupProvider({ children }: { children: ReactNode }) {
   const [currentStep, setStep] = useState<SignupStep>('signup')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [userId, setUserId] = useState('')
   const [merchant, setMerchant] = useState<Merchant | null>(null)
+  const [hasHydrated, setHasHydrated] = useState(false)
 
-  return (
-    <SignupContext.Provider
-      value={{
-        email,
-        setEmail,
-        userId,
-        setUserId,
-        merchant,
-        setMerchant,
-        currentStep,
-        setStep,
-      }}
-    >
-      {children}
-    </SignupContext.Provider>
+  const router = useRouter()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedStep = sessionStorage.getItem('signupStep')
+      if (savedStep && ['signup', 'confirm', 'business', 'link'].includes(savedStep)) {
+        setStep(savedStep as SignupStep)
+      }
+      setHasHydrated(true)
+    }
+  }, [])
+
+  // 🔁 Auto-redirect when onboarding should move into /admin
+  useEffect(() => {
+    const shouldRedirect = currentStep === 'business' && pathname.startsWith('/signup')
+
+    if (shouldRedirect) {
+      router.push('/signup/onboarding')
+    }
+  }, [currentStep, pathname, router])
+
+  // 🔁 Restore persisted values from sessionStorage
+  useEffect(() => {
+    const savedStep = sessionStorage.getItem('signupStep')
+    const savedEmail = sessionStorage.getItem('signupEmail')
+    const savedUserId = sessionStorage.getItem('signupUserId')
+    const savedMerchant = sessionStorage.getItem('signupMerchant')
+
+    if (savedStep && ['signup', 'confirm', 'business', 'link'].includes(savedStep)) {
+      setStep(savedStep as SignupStep)
+    }
+
+    if (savedEmail) setEmail(savedEmail)
+    if (savedUserId) setUserId(savedUserId)
+    if (savedMerchant) {
+      try {
+        setMerchant(JSON.parse(savedMerchant))
+      } catch (err) {
+        console.warn('Invalid merchant JSON in sessionStorage', err)
+      }
+    }
+  }, [])
+
+  // 🔁 Persist changes
+  useEffect(() => {
+    if (hasHydrated) {
+      sessionStorage.setItem('signupStep', currentStep)
+    }
+  }, [currentStep, hasHydrated])
+
+  useEffect(() => {
+    sessionStorage.setItem('signupEmail', email)
+  }, [email])
+
+  useEffect(() => {
+    sessionStorage.setItem('signupUserId', userId)
+  }, [userId])
+
+  useEffect(() => {
+    if (merchant) {
+      sessionStorage.setItem('signupMerchant', JSON.stringify(merchant))
+    } else {
+      sessionStorage.removeItem('signupMerchant')
+    }
+  }, [merchant])
+
+  const value = useMemo(
+    () => ({
+      currentStep,
+      setStep,
+      email,
+      setEmail,
+      password,
+      setPassword,
+      userId,
+      setUserId,
+      merchant,
+      setMerchant,
+    }),
+    [currentStep, email, password, userId, merchant]
   )
+
+  return <SignupContext.Provider value={value}>{children}</SignupContext.Provider>
 }
 
-export function useSignupContext() {
-  const ctx = useContext(SignupContext)
-  if (!ctx) throw new Error('useSignupContext must be used inside SignupProvider')
-  return ctx
+export function useSignupContext(): SignupContextType {
+  const context = useContext(SignupContext)
+  if (!context) {
+    throw new Error('useSignupContext must be used within a SignupProvider')
+  }
+  return context
 }

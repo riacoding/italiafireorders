@@ -15,9 +15,10 @@ const client = generateClient<Schema>()
 export type Order = Schema['Order']['type'] & { rawData: SquareOrder }
 
 export default function OrdersPage() {
-  const locationId = 'L8GCY97RR6QD0'
   const merchant = useMerchant()
-  const { data: orders = [], newOrderIds, isLoading } = useOrders(merchant.id, locationId)
+  const [locationId, setLocationId] = useState(() => merchant.locationIds?.[0] || '')
+
+  const { orders = [], newOrderIds } = useOrders(merchant.id, locationId)
   const { mutate: markPrepared } = useMarkPrepared(merchant.id)
 
   // useEffect(() => {
@@ -60,12 +61,24 @@ export default function OrdersPage() {
   return (
     <div className='container max-w-4xl py-8'>
       <h1 className='text-2xl font-bold mb-6'>Open Tickets</h1>
-
-      {orders.length === 0 ? (
+      <p>{locationId}</p>
+      {merchant.locationIds && merchant?.locationIds?.length > 1 && (
+        <select value={locationId} onChange={(e) => setLocationId(e.target.value)} className='border rounded p-2'>
+          {Array.isArray(merchant.locationIds) &&
+            merchant.locationIds
+              .filter((id): id is string => typeof id === 'string' && id.length > 0)
+              .map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))}
+        </select>
+      )}
+      {orders?.length === 0 ? (
         <p className='text-muted-foreground'>No orders yet.</p>
       ) : (
         <div className='space-y-4'>
-          {orders.map((order) => {
+          {orders?.map((order) => {
             return <OrderCard key={order.id} order={order} newOrderIds={newOrderIds} handlePrepared={markPrepared} />
           })}
         </div>

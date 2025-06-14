@@ -20,7 +20,7 @@ export type MenuInput = {
   isActive: boolean
 }
 
-export const merchantSelectionSet = ['handle', 'id', 'locationIds', 's3ItemKey', 'businessName'] as const
+export const merchantSelectionSet = ['handle', 'id', 'locationIds', 's3ItemKey', 'businessName', 'isLinked'] as const
 export type MerchantSelectionSet = (typeof merchantSelectionSet)[number]
 export type MerchantSelected = Pick<Schema['Merchant']['type'], MerchantSelectionSet>
 export type PublicMerchant = Pick<Schema['Merchant']['type'], MerchantSelectionSet>
@@ -52,6 +52,11 @@ export interface NormalizedTopping {
 
 export type SecureReceipt = {
   orderToken?: string
+  receiptItems: ReceiptItem[]
+}
+
+export type OrderReceipt = {
+  id: string
   receiptItems: ReceiptItem[]
 }
 

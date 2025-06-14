@@ -6,6 +6,15 @@ import SignupForm from '@/components/SignUpForm'
 import ConfirmForm from '@/components/ConfirmForm'
 import CreateBusinessForm from '@/components/CreateBusinessForm' // create this next
 import LinkAccount from '@/components/LinkAccount'
+import { useEffect } from 'react'
+
+function InitStep() {
+  const { setStep } = useSignupContext()
+  useEffect(() => {
+    setStep('signup')
+  }, [setStep])
+  return null
+}
 
 function SignupStepManager() {
   const { currentStep } = useSignupContext()
@@ -14,16 +23,15 @@ function SignupStepManager() {
     <div className='max-w-md mx-auto p-4'>
       {currentStep === 'signup' && <SignupForm />}
       {currentStep === 'confirm' && <ConfirmForm />}
-      {currentStep === 'business' && <CreateBusinessForm />}
-      {currentStep === 'link' && <LinkAccount />}
     </div>
   )
 }
 
 export default function SignupPage() {
   return (
-    <SignupProvider>
+    <>
+      <InitStep />
       <SignupStepManager />
-    </SignupProvider>
+    </>
   )
 }

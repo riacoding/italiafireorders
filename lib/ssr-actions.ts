@@ -55,6 +55,7 @@ import {
   merchantSelectionSet,
   MerchantSelected,
   PublicMerchant,
+  OrderReceipt,
 } from '@/types'
 import { extractReceiptItems, orderNumberToTicket } from './utils'
 import { SquareClient, SquareEnvironment } from 'square'
@@ -322,7 +323,7 @@ export async function getSquareItems(ids: string[]): Promise<SquareItem[]> {
 export async function getSquareOrderByOrderNumber(
   orderNumber: string,
   orderToken: string
-): Promise<ReceiptItem[] | null> {
+): Promise<OrderReceipt | null> {
   const token = process.env.SQUARE_ACCESS_TOKEN || 'noToken'
   const locationId = process.env.SQUARE_LOCATION_ID || 'noLocation'
 
@@ -341,6 +342,7 @@ export async function getSquareOrderByOrderNumber(
       console.error('Error fetching order:', errors)
       throw new Error(errors.map((e) => e.message).join(', '))
     }
+    const orderId = data[0].id
     const raw = data[0]?.rawData
 
     if (!raw) {
@@ -365,7 +367,7 @@ export async function getSquareOrderByOrderNumber(
       console.log('name overrides', nameOverrides)
       const receiptItems = extractReceiptItems(order, nameOverrides)
       if (squareOrderToken === orderToken) {
-        return receiptItems
+        return { id: orderId, receiptItems }
       }
       return null
     }
@@ -804,12 +806,16 @@ export async function upsertCatalogItem({
 }) {
   const catalogDataString = JSON.stringify(catalogData)
 
-  const { data: existingItems, errors: listErrors } = await cookieBasedClient.models.CatalogItem.list({
-    filter: {
-      squareItemId: { eq: squareItemId },
-    },
-    authMode: 'userPool',
-  })
+  const { data: existingItems, errors: listErrors } =
+    await cookieBasedClient.models.CatalogItem.listCatalogItemByMerchantId(
+      { merchantId },
+      {
+        filter: {
+          squareItemId: { eq: squareItemId },
+        },
+        authMode: 'userPool',
+      }
+    )
 
   console.log('Existing Items', existingItems)
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useCart } from '@/components/CartContext'
 import { Button } from '@/components/ui/button'
 import { Minus, Plus } from 'lucide-react'
@@ -70,6 +71,9 @@ export default function ItemDetail({ item, handle }: { item: NormalizedItem; han
         </div>
       </header>
       <h1 className='text-2xl font-bold'>{item.customName || item.name}</h1>
+      <div className='w-16 h-16 relative mr-3'>
+        {item && item.image && <Image src={item.image} alt={item.name} fill className='object-cover rounded border' />}
+      </div>
       <p className='text-muted-foreground'>{item.description}</p>
       <p className='font-semibold text-lg'>${(item.price / 100).toFixed(2)}</p>
 

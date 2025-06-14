@@ -31,6 +31,8 @@ export default function CartPage() {
 
   const locationId = menu.squareLocationId
 
+  const merchantId = merchant?.id
+
   useEffect(() => {
     setHasHydrated(true)
   }, [])
@@ -66,7 +68,7 @@ export default function CartPage() {
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cartItems, locationId, menuSlug, orderToken, timeZone, backLink }),
+      body: JSON.stringify({ cartItems, locationId, menuSlug, orderToken, timeZone, backLink, merchantId }),
     })
 
     const data = await res.json()
@@ -128,11 +130,9 @@ export default function CartPage() {
                   <CardContent className='p-3'>
                     <div className='flex items-start'>
                       <div className='w-16 h-16 relative mr-3'>
-                        <StorageImage
-                          className='w-full h-full object-cover rounded border'
-                          path={`items/${item.catalogItemId}.jpg`}
-                          alt='menu item'
-                        />
+                        {item && item.image && (
+                          <Image src={item.image} alt={item.name} fill className='object-cover rounded border' />
+                        )}
                       </div>
                       <div className='flex-1'>
                         <div className='flex justify-between'>

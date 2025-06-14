@@ -3,17 +3,23 @@
 import { useCart } from '@/components/CartContext'
 import { ReceiptSimpleList } from '@/components/ReceiptItemList'
 import { getSquareOrderByOrderNumber, updateOrderContact } from '@/lib/ssr-actions'
-import { ReceiptItem, SecureReceipt } from '@/types'
+import { OrderReceipt, ReceiptItem, SecureReceipt } from '@/types'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { generateClient } from 'aws-amplify/data'
+import type { Schema } from '@/amplify/data/resource'
+import { useOrderUpdateSubscription } from '@/hooks/useOrderUpdateSubscription'
+
+const client = generateClient<Schema>()
 
 export default function ThankYouClient() {
   const searchParams = useSearchParams()
-  const [order, setOrder] = useState<ReceiptItem[] | null>(null)
+  const [order, setOrder] = useState<OrderReceipt | null>(null)
   const [name, setName] = useState('')
+  const [orderStatus, setOrderStatus] = useState('PROPOSED')
   const [rawPhone, setRawPhone] = useState('')
   const formattedPhone = formatPhoneInput(rawPhone)
   const [submitted, setSubmitted] = useState(false)
@@ -23,6 +29,10 @@ export default function ThankYouClient() {
   const orderAccess = searchParams.get('order') || 'none-none'
   const [locationId, date, orderNumber] = orderAccess.split('-')
   const { clearCart } = useCart()
+
+  useOrderUpdateSubscription(order?.id, (status) => {
+    setOrderStatus(status)
+  })
 
   useEffect(() => {
     clearCart()
@@ -79,7 +89,14 @@ export default function ThankYouClient() {
 
           <div className='mt-4 min-h-[8rem]'>
             {isLoading && <p className='text-lg'>Loading order...</p>}
-            {order && order.length > 0 && <ReceiptSimpleList items={order} />}
+            {order && order.receiptItems.length > 0 && <ReceiptSimpleList items={order.receiptItems} />}
+          </div>
+          <div className='mt-4'>
+            {orderStatus === 'PREPARED' ? (
+              <p className='text-lg text-green-500'>Your order is ready! Pick it up and Enjoy </p>
+            ) : (
+              <p className='text-md'>Leave this window open and we'll let you know when its ready </p>
+            )}
           </div>
         </div>
         <div>
@@ -96,7 +113,6 @@ export default function ThankYouClient() {
           {submitted && <p className='mt-6 text-green-600'>✅ You’ll get a text when it’s ready!</p>}
         </div>
       </div>
-      <pre>{JSON.stringify(order, null, 2)}</pre>
     </div>
   )
 }

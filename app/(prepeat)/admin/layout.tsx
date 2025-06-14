@@ -1,41 +1,67 @@
 'use client'
+
 import { useSafeAuthenticator } from '@/hooks/useSafeAuthenticator'
-import { getUserBySub, getMerchant } from '@/lib/ssr-actions' // your data client or fetch functions
+import { getUserBySub, getMerchant } from '@/lib/ssr-actions'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { MerchantProvider } from '@/components/MerchantContext'
-import { Merchant, MerchantSelectionSet, PublicMerchant } from '@/types'
+import { PublicMerchant } from '@/types'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, authStatus } = useSafeAuthenticator()
   const router = useRouter()
+  const pathname = usePathname()
 
   const [merchant, setMerchant] = useState<PublicMerchant | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [checking, setChecking] = useState(true)
+
+  const isOnboardingRoute = pathname.startsWith('/admin/onboarding')
 
   useEffect(() => {
-    async function loadMerchant() {
+    async function load() {
+      console.log('loading layout')
       if (authStatus === 'authenticated' && user?.userId) {
         const userRecord = await getUserBySub(user.userId)
+
         if (!userRecord?.merchantId) {
-          router.replace('/no-merchant') // optional fallback
+          if (!isOnboardingRoute) {
+            router.replace('/signup/onboarding')
+            return
+          }
+          setChecking(false)
           return
         }
-        const merchant = await getMerchant(userRecord.merchantId)
-        setMerchant(merchant)
-        setLoading(false)
+
+        const fetchedMerchant = await getMerchant(userRecord.merchantId)
+        setMerchant(fetchedMerchant)
+
+        // If merchant exists but user is on onboarding, redirect them to /admin
+        if (isOnboardingRoute) {
+          router.replace('/admin')
+          return
+        }
+
+        setChecking(false)
       }
     }
 
     if (authStatus === 'unauthenticated') {
       router.replace('/login')
     } else {
-      loadMerchant()
+      load()
     }
-  }, [authStatus, user?.userId, router])
+  }, [authStatus, user?.userId, pathname, isOnboardingRoute, router])
 
-  if (authStatus !== 'authenticated' || loading) return null
+  if (checking || authStatus !== 'authenticated') {
+    return
+  }
 
+  // If we're still here on onboarding route, they are allowed through without MerchantProvider
+  if (isOnboardingRoute && !merchant) {
+    return <div className='w-full flex flex-col items-center'>{children}</div>
+  }
+
+  // All other admin routes require MerchantProvider
   return (
     <MerchantProvider merchant={merchant}>
       <div className='w-full flex flex-col items-center'>{children}</div>

@@ -8,6 +8,8 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
+import { useRouter } from 'next/navigation'
 
 const signupSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -21,6 +23,8 @@ type SignupFormValues = z.infer<typeof signupSchema>
 export default function SignupForm() {
   const { setEmail, setUserId, setStep } = useSignupContext()
   const [serverError, setServerError] = useState<string | null>(null)
+  const { toast } = useToast()
+  const router = useRouter()
 
   const {
     register,
@@ -49,8 +53,24 @@ export default function SignupForm() {
       setUserId(result.userId!)
       setStep('confirm')
     } catch (err: any) {
-      console.error(err)
-      setServerError(err.message || 'Signup failed')
+      if (err.name === 'UsernameExistsException') {
+        toast({
+          title: 'Account already exists',
+          description: 'Redirecting to login...',
+        })
+
+        // Slight delay before redirect so user sees the toast
+        setTimeout(() => router.push('/login'), 1500)
+        console.log(err)
+        setServerError(err.message || 'Signup failed')
+      } else {
+        console.log('Signup error:', err)
+        toast({
+          title: 'Signup failed',
+          description: err.message || 'An unknown error occurred.',
+          variant: 'destructive',
+        })
+      }
     }
   }
 

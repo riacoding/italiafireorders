@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'aws-amplify/auth'
+import { useToast } from '@/hooks/use-toast'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,11 +26,22 @@ export default function LoginPage() {
       if (result.nextStep?.signInStep === 'DONE') {
         router.push('/admin/kds') // Redirect after successful login
       } else {
-        setError('Additional authentication steps required.')
+        if (result.nextStep.signInStep === 'CONFIRM_SIGN_UP') router.push(`/confirm?email=${encodeURIComponent(email)}`)
         // Optionally handle MFA here
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed')
+      if (err.name === 'UserAlreadyAuthenticatedException') {
+        toast({
+          title: 'Account already logged in',
+          description: 'Redirecting to admin...',
+        })
+
+        // Slight delay before redirect so user sees the toast
+        setTimeout(() => router.push('/admin'), 1500)
+        console.log(err)
+
+        setError(err.message || 'Already Logged in')
+      }
     } finally {
       setLoading(false)
     }

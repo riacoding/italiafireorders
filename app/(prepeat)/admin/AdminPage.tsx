@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Menu } from '@/types'
 import { Eye, Trash, Loader2, Pencil } from 'lucide-react'
@@ -9,6 +9,7 @@ import { syncMenuItems } from '@/lib/ssr-actions'
 import { MenuSelection } from './page'
 import { useToast } from '@/hooks/use-toast'
 import { useMerchant } from '@/components/MerchantContext'
+import { useRouter } from 'next/navigation'
 
 type AdminPageProps = {
   menus: MenuSelection[]
@@ -18,6 +19,19 @@ export default function AdminPage({ menus }: AdminPageProps) {
   const merchant = useMerchant()
   const [syncing, setSyncing] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!merchant.isLinked) {
+      toast({
+        title: 'Link your account',
+        description: 'Please link your account to sync your Square items.',
+        variant: 'destructive',
+      })
+
+      setTimeout(() => router.push('/admin/link'), 1500)
+    }
+  }, [merchant])
 
   async function handleSync() {
     setSyncing(true)

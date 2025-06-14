@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
       squareMerchantId: merchantId,
       businessName: merchantProfile.merchant?.businessName || 'Unnamed Business',
       locationIds: locationIds || [],
+      isLinked: true,
     })
 
     return NextResponse.redirect(`${env.NEXT_PUBLIC_BASE_URL}/admin/setup`)
