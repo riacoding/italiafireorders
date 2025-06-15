@@ -6,7 +6,6 @@ import jwt from 'jsonwebtoken'
 const env = process.env
 console.log('SQUARE_APP_ID', env.SQUARE_APPLICATION_ID)
 console.log('SQUARE_SECRET', env.SQUARE_CLIENT_SECRET ? '✅ loaded' : '❌ MISSING')
-console.log('Redirect URI:', 'http://localhost:3000/square/callback')
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
