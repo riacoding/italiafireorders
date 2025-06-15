@@ -626,7 +626,7 @@ export async function getMenuItemWithCatalogItem(id: string) {
   if (errors?.length || !menuItem) return null
 
   const { data: catalogItem } = await cookieBasedClient.models.CatalogItem.get(
-    { id: menuItem.catalogItemId },
+    { merchantId: menuItem.merchantId, squareItemId: menuItem.catalogItemId },
     { selectionSet: catalogItemSelectionSet, authMode: 'userPool' }
   )
 
@@ -806,31 +806,22 @@ export async function upsertCatalogItem({
 }) {
   const catalogDataString = JSON.stringify(catalogData)
 
-  const { data: existingItems, errors: listErrors } =
-    await cookieBasedClient.models.CatalogItem.listCatalogItemByMerchantId(
-      { merchantId },
-      {
-        filter: {
-          squareItemId: { eq: squareItemId },
-        },
-        authMode: 'userPool',
-      }
-    )
+  const { data: existing, errors: getErrors } = await cookieBasedClient.models.CatalogItem.get(
+    { merchantId, squareItemId },
+    { authMode: 'userPool' }
+  )
 
-  console.log('Existing Items', existingItems)
-
-  if (listErrors?.length) {
-    console.error('Error checking existing CatalogItem:', listErrors)
-    throw new Error(listErrors.map((e) => e.message).join(', '))
+  if (getErrors?.length) {
+    console.error('Error getting existing CatalogItem:', getErrors)
+    throw new Error(getErrors.map((e) => e.message).join(', '))
   }
-
-  const existing = existingItems?.[0]
 
   if (existing) {
     const { data: updatedItem, errors: updateErrors } = await cookieBasedClient.models.CatalogItem.update(
       {
-        id: existing.id,
-        catalogVariationId: catalogVariationId,
+        merchantId,
+        squareItemId,
+        catalogVariationId,
         catalogData: catalogDataString,
       },
       { authMode: 'userPool' }
@@ -845,10 +836,9 @@ export async function upsertCatalogItem({
   } else {
     const { data: createdItem, errors: createErrors } = await cookieBasedClient.models.CatalogItem.create(
       {
-        id: squareItemId,
-        merchantId: merchantId,
+        merchantId,
         squareItemId,
-        catalogVariationId: catalogVariationId,
+        catalogVariationId,
         catalogData: catalogDataString,
       },
       { authMode: 'userPool' }

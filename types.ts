@@ -25,9 +25,17 @@ export type MerchantSelectionSet = (typeof merchantSelectionSet)[number]
 export type MerchantSelected = Pick<Schema['Merchant']['type'], MerchantSelectionSet>
 export type PublicMerchant = Pick<Schema['Merchant']['type'], MerchantSelectionSet>
 
-export const menuItemSelectionSet = ['id', 'menuId', 'catalogItemId', 'customName', 'sortOrder', 'isFeatured'] as const
+export const menuItemSelectionSet = [
+  'id',
+  'merchantId',
+  'menuId',
+  'catalogItemId',
+  'customName',
+  'sortOrder',
+  'isFeatured',
+] as const
 
-export const catalogItemSelectionSet = ['id', 'squareItemId', 'catalogData'] as const
+export const catalogItemSelectionSet = ['merchantId', 'squareItemId', 'catalogData'] as const
 
 export const menuSelectionSet = [
   'id',

@@ -73,13 +73,13 @@ const schema = a
     // 🆕 Standalone CatalogItem to sync Square catalog
     CatalogItem: a
       .model({
-        id: a.id().required(),
         squareItemId: a.string().required(), // Square object ID
         catalogVariationId: a.string(),
         s3ItemKey: a.string(),
         merchantId: a.id().required(),
         catalogData: a.json().required(), // Full Square catalog JSON
       })
+      .identifier(['merchantId', 'squareItemId'])
       .secondaryIndexes((index) => [index('squareItemId'), index('merchantId')])
       .authorization((allow) => [allow.groups(['vendor', 'admin']), allow.guest().to(['read'])]),
 
