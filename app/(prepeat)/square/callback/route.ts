@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     })
 
     const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/square/callback`
-    console.log('redirectUri', encodeURIComponent(redirectUri))
+    console.log('redirectUri', redirectUri)
 
     const tokenResult: Square.ObtainTokenResponse = await square.oAuth.obtainToken({
       code,
