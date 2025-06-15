@@ -32,12 +32,15 @@ export async function GET(req: NextRequest) {
       token: undefined, // We're obtaining one now
     })
 
+    const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/square/callback`
+    console.log('redirectUri', encodeURIComponent(redirectUri))
+
     const tokenResult: Square.ObtainTokenResponse = await square.oAuth.obtainToken({
       code,
       clientId: env.SQUARE_APPLICATION_ID!,
       clientSecret: process.env.SQUARE_CLIENT_SECRET,
       grantType: 'authorization_code',
-      redirectUri: 'http://localhost:3000/square/callback',
+      redirectUri: encodeURIComponent(redirectUri),
     })
 
     const { accessToken, refreshToken, expiresAt, merchantId } = tokenResult
