@@ -19,8 +19,7 @@ import branchName from 'current-git-branch'
 
 config({ path: '.env.local', override: false })
 
-const currentBranch =
-  process.env.NEXT_PUBLIC_ENVIRONMENT === 'sandbox' ? 'sandbox' : branchName() || process.env.AWS_BRANCH
+const currentBranch = process.env.ENVIRONMENT === 'sandbox' ? 'sandbox' : branchName() || process.env.AWS_BRANCH
 
 const backend = defineBackend({
   auth,
