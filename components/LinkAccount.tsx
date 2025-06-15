@@ -41,7 +41,8 @@ export default function LinkAccount() {
       </div>
 
       <div className='text-center'>
-        <p className='text-gray-600 mb-4'>To accept payments and manage orders, please link your Square account.</p>0
+        <p className='text-gray-600 mb-4'>To accept payments and manage orders, please link your Square account.</p>
+        <p>{url}</p>
         <Button size='lg' className='w-full bg-prepeat-orange hover:bg-orange-600' disabled={!url} asChild>
           <Link href={url || '#'} aria-disabled={!url}>
             Link Square

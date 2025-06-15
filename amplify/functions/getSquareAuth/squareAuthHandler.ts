@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
   // Store this state in your DB or pass it back to client to set in cookie
   // (e.g., state -> handle map in DynamoDB with TTL)
 
-  const isSandbox = SQUARE_ENV.toLowerCase() === 'sandbox'
+  const isSandbox = SQUARE_ENV.toLowerCase() === 'sandbox' || SQUARE_ENV.toLowerCase() === 'staging'
   const basePath = isSandbox ? 'https://app.squareupsandbox.com' : 'https://app.squareup.com'
 
   const redirectUri = `${env.APP_BASE_URL}/square/callback` // replace with your actual sandbox callback
