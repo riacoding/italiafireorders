@@ -19,6 +19,9 @@ import branchName from 'current-git-branch'
 
 config({ path: '.env.local', override: false })
 
+const currentBranch =
+  process.env.NEXT_PUBLIC_ENVIRONMENT === 'sandbox' ? 'sandbox' : branchName() || process.env.AWS_BRANCH
+
 const backend = defineBackend({
   auth,
   data,
@@ -31,6 +34,13 @@ const backend = defineBackend({
 })
 const environment = process.env.ENVIRONMENT ?? 'dev'
 const ordersTable = backend.data.resources.tables['Order']
+
+const APP_BASE_URL =
+  currentBranch === 'prepeat-dev'
+    ? 'https://prepeat-dev.dgs4gp483bprx.amplifyapp.com'
+    : currentBranch === 'main'
+      ? 'https://main.dgs4gp483bprx.amplifyapp.com/'
+      : 'http://localhost:3000'
 
 const squareWebhook = new SquareWebhookStack(backend.data.stack, 'SquareWebHookStack', {
   squareProcessorLambda: backend.webhookProcessor.resources.lambda,
@@ -76,6 +86,7 @@ backend.addOutput({
       endpoint: httpApi.url,
       region: Stack.of(httpApi).region,
     },
+    deployment: process.env.AWS_DEPLOYMENT_TYPE,
   },
 })
 
@@ -89,6 +100,7 @@ backend.webhookProcessor.addEnvironment('SQS_QUEUE_URL', squareWebhook.squareQue
 backend.webhookProcessor.addEnvironment('SQS_DLQ_URL', squareWebhook.squareDLQURL.queueUrl)
 backend.webhookProcessor.addEnvironment('ORDERS_TABLE', ordersTable.tableName)
 backend.webhookProcessor.addEnvironment('IDEMPOTENCY_TABLE', squareWebhook.idempotencyTable.tableName)
+backend.squareAuth.addEnvironment('APP_BASE_URL', APP_BASE_URL)
 
 squareWebhook.squareTopic.grantPublish(backend.webhook.resources.lambda)
 
