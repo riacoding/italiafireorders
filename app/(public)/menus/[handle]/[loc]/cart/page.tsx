@@ -31,6 +31,8 @@ export default function CartPage() {
 
   const locationId = menu.squareLocationId
 
+  console.log('locationId', locationId)
+
   const merchantId = merchant?.id
 
   useEffect(() => {
