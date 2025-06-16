@@ -104,6 +104,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: result.paymentLink?.longUrl, ticketNumber: ticket?.ticketNumber })
   } catch (err) {
     console.error('Error creating Square checkout:', err)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
