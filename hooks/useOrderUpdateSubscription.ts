@@ -10,6 +10,7 @@ export function useOrderUpdateSubscription(orderId: string | undefined, onStatus
 
     const sub = client.models.Order.onUpdate({
       filter: { id: { eq: orderId } },
+      authMode: 'identityPool',
     }).subscribe({
       next: (data) => {
         const status = data?.fulfillmentStatus
