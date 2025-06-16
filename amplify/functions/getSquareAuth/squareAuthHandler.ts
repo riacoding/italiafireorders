@@ -47,7 +47,7 @@ export const handler = async (event: any) => {
     `&response_type=code` +
     `&scope=${scopes.join('+')}` +
     `&state=${state}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}`
+    `&redirect_uri=${redirectUri}`
 
   return {
     url,
