@@ -887,7 +887,8 @@ export async function getMerchant(merchantId: string): Promise<PublicMerchant | 
 }
 
 export async function getServerMerchant(merchantId: string): Promise<Merchant | null> {
-  const { data, errors } = await cookieBasedClient.models.Merchant.get({ id: merchantId }, { authMode: 'userPool' })
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
+  const { data, errors } = await cookieBasedClient.models.Merchant.get({ id: merchantId }, { authMode })
   if (errors?.length) {
     console.error('Error fetching merchant:', errors)
     throw new Error(errors.map((e: any) => e.message).join(', '))
