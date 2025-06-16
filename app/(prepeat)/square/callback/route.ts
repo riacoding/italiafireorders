@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       clientId: env.SQUARE_APPLICATION_ID!,
       clientSecret: process.env.SQUARE_CLIENT_SECRET,
       grantType: 'authorization_code',
-      redirectUri: encodeURIComponent(redirectUri),
+      redirectUri: redirectUri,
     })
 
     const { accessToken, refreshToken, expiresAt, merchantId } = tokenResult
