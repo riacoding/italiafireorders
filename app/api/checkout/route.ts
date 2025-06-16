@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { cartItems, locationId, menuSlug, orderToken, timeZone, backLink, merchantId } = body
-
+    console.log('checkout route', JSON.stringify(body, null, 2))
     const merchant = await getServerMerchant(merchantId)
 
     const client = new SquareClient({

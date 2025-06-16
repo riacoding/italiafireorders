@@ -9,10 +9,11 @@ import { env } from '$amplify/env/twilioInboundHandler'
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env)
 Amplify.configure(resourceConfig, libraryOptions)
 const client = generateClient<Schema>()
+export type Menu = Schema['Menu']['type']
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   console.log('event:', event)
-  console.log(process.env)
+  const APP_BASE_URL = process.env.APP_BASE_URL
   const rawBody = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || ''
 
   const parsed = querystring.parse(rawBody)
@@ -24,18 +25,30 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   let reply = 'Sorry, we couldn’t find a menu for that code. Please try again.'
 
   if (message) {
-    const { data: menu, errors } = await client.models.Menu.listMenuByLocationId(
+    const { data: menus, errors } = await client.models.Menu.listMenuByLocationId(
       { locationId: message },
       { authMode: 'iam' }
     )
-    console.log('menu', menu)
+
     if (errors?.length) {
       console.error('fetch menu failed:', errors)
       throw new Error(errors.map((e) => e.message).join(', '))
     }
 
-    if (menu[0]?.isActive) {
-      reply = `Here’s today’s menu: https://main.d1tk6naxmgg6kb.amplifyapp.com/menu/${menu[0].locationId}`
+    const menu: Menu = menus[0]
+    console.log('menu', menu)
+
+    const { data: merchant, errors: merchantErrors } = await client.models.Merchant.get(
+      { id: menu.merchantId },
+      { authMode: 'iam' }
+    )
+    if (merchantErrors?.length) {
+      console.error('fetch menu failed:', errors)
+      throw new Error(merchantErrors.map((e) => e.message).join(', '))
+    }
+
+    if (menu.isActive) {
+      reply = `Here’s today’s menu: ${APP_BASE_URL}/menus/${merchant?.handle}/${menu.locationId}`
     }
   }
 
