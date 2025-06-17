@@ -23,7 +23,7 @@ function normalizeOrders(items: Schema['Order']['type'][]): Order[] {
 }
 
 export function useOrders(merchantId: string, locationId: string) {
-  console.log('merchant and location', merchantId, locationId)
+  //console.log('merchant and location', merchantId, locationId)
   const queryClient = useQueryClient()
   const queryKey = ['orders', merchantId, locationId]
   const [orders, setOrders] = useState<Order[] | null>(null)
@@ -56,7 +56,7 @@ export function useOrders(merchantId: string, locationId: string) {
     }).subscribe({
       next: ({ items }) => {
         const normalized = normalizeOrders(items)
-        console.log('normalized orders', normalized)
+        //console.log('normalized orders', normalized)
         setOrders(normalized)
         const currentIds = new Set(normalized.map((o) => o.id))
         const newIds = new Set<string>()

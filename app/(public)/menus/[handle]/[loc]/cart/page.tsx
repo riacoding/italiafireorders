@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { CartItem } from '@/types'
 import { usePublicMerchant } from '@/components/MerchantPublicContext'
 import { useMenu } from '../MenuProvider'
+import { safeUUID } from '@/lib/utils'
 
 const timeZone = 'America/Los_Angeles'
 
@@ -55,7 +56,7 @@ export default function CartPage() {
   }
 
   const placeOrder = async () => {
-    const orderToken = crypto.randomUUID().slice(0, 8)
+    const orderToken = safeUUID()
     if (cartItems.length === 0) {
       toast({
         title: 'Cart is empty',
