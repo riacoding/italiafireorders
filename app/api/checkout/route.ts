@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
           },
         ],
         metadata: {
-          menuSlug: menuSlug,
+          menuSlug: menuSlug ?? 'no slug',
           ticketNumber: displayTicketNumber,
           orderToken: orderToken,
           timeZone: timeZone,
