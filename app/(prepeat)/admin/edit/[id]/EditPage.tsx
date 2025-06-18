@@ -28,6 +28,7 @@ import { bumpCacheVersion } from '@/lib/menuCache'
 type FormValues = {
   name: string
   locationId: string
+  squareLocationId: string
   logo?: string
   theme?: string // JSON string
   isActive: boolean
@@ -140,6 +141,7 @@ export default function EditPage({ id }: EditPageParams) {
       name: data.name,
       merchantId: merchant.id,
       locationId: data.locationId,
+      squareLocationId: merchant.locationIds[0]!,
       logo: data.logo || '',
       theme: parsedTheme,
       isActive: data.isActive,

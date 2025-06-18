@@ -14,6 +14,7 @@ export type MenuInput = {
   id?: string
   name: string
   locationId: string
+  squareLocationId: string
   merchantId: string
   logo?: string
   theme?: object | null
