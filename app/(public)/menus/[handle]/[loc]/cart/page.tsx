@@ -98,9 +98,6 @@ export default function CartPage() {
     } else {
       console.error('Failed to create checkout link')
     }
-
-    toast({ title: 'Order placed!', description: 'Your order has been placed successfully.' })
-    clearCart()
   }
 
   if (!hasHydrated) return null
