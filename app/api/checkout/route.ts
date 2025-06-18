@@ -6,7 +6,7 @@ import { getServerMerchant, isAuth } from '@/lib/ssr-actions'
 
 export async function POST(req: NextRequest) {
   //console.log('SQUARE_ACCESS_TOKEN length:', process.env.SQUARE_ACCESS_TOKEN?.length)
-  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
+  const authMode = (await isAuth()) ? 'userPool' : 'iam'
   try {
     const body = await req.json()
     const { cartItems, locationId, menuSlug, orderToken, timeZone, backLink, merchantId } = body

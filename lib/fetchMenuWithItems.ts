@@ -34,6 +34,8 @@ export const fetchMenuWithItems = cache(
 
     const rawItems = await fetchMenuItemsWithModifiers(squareIds)
 
+    console.log('rawitems', rawItems, squareIds)
+
     const normalizedItems: NormalizedItem[] = menuItems
       .map((mi) => {
         const catalog = rawItems.find((ri) => ri.item.id === mi.catalogItemId)

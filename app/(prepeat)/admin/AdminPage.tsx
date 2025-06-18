@@ -35,6 +35,7 @@ export default function AdminPage({ menus }: AdminPageProps) {
 
   async function handleSync() {
     setSyncing(true)
+    console.log('merchant', merchant)
     if (!merchant) return
     try {
       await syncMenuItems(merchant)

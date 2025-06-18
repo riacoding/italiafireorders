@@ -34,7 +34,7 @@ const schema = a
         tokenExpiresAt: a.datetime(),
         tokenrefreshedAt: a.datetime(),
         businessName: a.string().required(),
-        locationIds: a.string().array(),
+        locationIds: a.string().array().required(),
         s3ItemKey: a.string(),
         isLinked: a.boolean().default(false),
       })
@@ -109,7 +109,7 @@ const schema = a
         menuItems: a.hasMany('MenuItem', 'menuId'), // 🆕 one-to-many
       })
       .secondaryIndexes((index) => [index('locationId'), index('merchantId')])
-      .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
+      .authorization((allow) => [allow.owner(), allow.groups(['admin', 'vendor']), allow.guest().to(['read'])]),
     MenuItem: a
       .model({
         id: a.id().required(),
@@ -123,7 +123,7 @@ const schema = a
         menu: a.belongsTo('Menu', 'menuId'),
         toppings: a.hasMany('ItemTopping', 'menuItemId'),
       })
-      .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
+      .authorization((allow) => [allow.owner(), allow.groups(['admin', 'vendor']), allow.guest().to(['read'])]),
 
     Topping: a
       .model({

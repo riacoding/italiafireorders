@@ -98,6 +98,7 @@ export default function CreateBusinessForm() {
           businessName: data.businessName,
           squareMerchantId: 'provisional',
           accessToken: 'provisional',
+          locationIds: [],
         },
         { authMode: 'userPool' }
       )

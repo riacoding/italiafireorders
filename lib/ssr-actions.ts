@@ -140,7 +140,7 @@ export const fetchCurrentMenus = async () => {
 }
 
 export const getCurrentMenu = async (locationId: string): Promise<Menu | null> => {
-  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
   //console.log('locationId', locationId)
   const { data, errors } = await cookieBasedClient.models.Menu.list({
     filter: { locationId: { eq: locationId }, isActive: { eq: true } },
@@ -150,6 +150,7 @@ export const getCurrentMenu = async (locationId: string): Promise<Menu | null> =
     console.error('Error fetching menu:', errors)
     throw new Error(errors.map((e) => e.message).join(', '))
   }
+  console.log('current menu', data)
   return data[0]
 }
 
@@ -582,7 +583,7 @@ export async function getAllSquareCatalogItems(): Promise<SquareCatalogObject[]>
 
 //fetch from appsync
 export async function fetchMenuItemsWithModifiers(squareItemIds: string[]): Promise<ItemWithModifiers[]> {
-  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
   const { data, errors } = await cookieBasedClient.models.CatalogItem.list({
     authMode,
   })
@@ -596,7 +597,7 @@ export async function fetchMenuItemsWithModifiers(squareItemIds: string[]): Prom
 
   const filtered = allItems.filter((item) => squareItemIds.includes(item.squareItemId))
 
-  //console.log('Filtered', filtered)
+  console.log('Filtered', filtered)
 
   // Hydrate and return in expected format
   const hydrated: ItemWithModifiers[] = filtered.map((ci) => {
@@ -662,95 +663,105 @@ export async function updateMenuItem(input: {
   return data?.id
 }
 
-export async function getSquareItemsWithModifiers(merchant: Merchant): Promise<ItemWithModifiers[]> {
+export async function getSquareItemsWithModifiers(merchant: Merchant): Promise<ItemWithModifiers[] | []> {
   const token = merchant.accessToken
-  const res = await fetch(`${SQUARE_BASE_URL}/catalog/list`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  })
+  if (!token) throw new Error('No access token')
 
-  const json = await res.json()
-  const objects: SquareCatalogObject[] = json.objects || []
-
-  // 1. Filter to only requested items
-  const items: SquareItem[] = objects.filter((obj): obj is SquareItem => obj.type === 'ITEM')
-
-  // 2. Collect modifier list IDs from both item and variation levels
-  const modifierListIds = new Set<string>()
-
-  for (const item of items) {
-    // item-level
-    const itemLevel = item.item_data?.modifier_list_info ?? []
-    itemLevel.forEach((info) => {
-      if (info.enabled && info.modifier_list_id) {
-        modifierListIds.add(info.modifier_list_id)
-      }
+  try {
+    const res = await fetch(`${SQUARE_BASE_URL}/catalog/list`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
     })
 
-    // variation-level
-    const variations = item.item_data?.variations ?? []
-    for (const variation of variations) {
-      const varInfos = variation.item_variation_data?.modifier_list_info ?? []
-      varInfos.forEach((info) => {
+    const json = await res.json()
+    const objects: SquareCatalogObject[] = json.objects || []
+
+    console.log('objects', objects)
+
+    // 1. Filter to only requested items
+    const items: SquareItem[] = objects.filter((obj): obj is SquareItem => obj.type === 'ITEM')
+
+    // 2. Collect modifier list IDs from both item and variation levels
+    const modifierListIds = new Set<string>()
+
+    for (const item of items) {
+      // item-level
+      const itemLevel = item.item_data?.modifier_list_info ?? []
+      itemLevel.forEach((info) => {
         if (info.enabled && info.modifier_list_id) {
           modifierListIds.add(info.modifier_list_id)
         }
       })
-    }
-  }
 
-  // 3. Fetch all modifier lists
-  const modifierLists: Record<string, SquareModifierList> = {}
-
-  await Promise.all(
-    Array.from(modifierListIds).map(async (id) => {
-      const res = await fetch(`${SQUARE_BASE_URL}/catalog/object/${id}`, {
-        headers: {
-          Authorization: `Bearer ${SQUARE_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-      })
-
-      const json = await res.json()
-      modifierLists[id] = json.object
-    })
-  )
-
-  // 4. Return items with resolved modifier lists
-  return items.map((item) => {
-    const listIds = new Set<string>()
-
-    const itemLevel = item.item_data?.modifier_list_info ?? []
-    itemLevel.forEach((info) => {
-      if (info.enabled && info.modifier_list_id) {
-        listIds.add(info.modifier_list_id)
+      // variation-level
+      const variations = item.item_data?.variations ?? []
+      for (const variation of variations) {
+        const varInfos = variation.item_variation_data?.modifier_list_info ?? []
+        varInfos.forEach((info) => {
+          if (info.enabled && info.modifier_list_id) {
+            modifierListIds.add(info.modifier_list_id)
+          }
+        })
       }
-    })
+    }
 
-    const variations = item.item_data?.variations ?? []
-    for (const variation of variations) {
-      const varInfos = variation.item_variation_data?.modifier_list_info ?? []
-      varInfos.forEach((info) => {
+    // 3. Fetch all modifier lists
+    const modifierLists: Record<string, SquareModifierList> = {}
+
+    await Promise.all(
+      Array.from(modifierListIds).map(async (id) => {
+        const res = await fetch(`${SQUARE_BASE_URL}/catalog/object/${id}`, {
+          headers: {
+            Authorization: `Bearer ${SQUARE_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        })
+
+        const json = await res.json()
+        modifierLists[id] = json.object
+      })
+    )
+
+    // 4. Return items with resolved modifier lists
+    return items.map((item) => {
+      const listIds = new Set<string>()
+
+      const itemLevel = item.item_data?.modifier_list_info ?? []
+      itemLevel.forEach((info) => {
         if (info.enabled && info.modifier_list_id) {
           listIds.add(info.modifier_list_id)
         }
       })
-    }
 
-    const resolvedLists = Array.from(listIds)
-      .map((id) => modifierLists[id])
-      .filter((list): list is SquareModifierList => Boolean(list))
+      const variations = item.item_data?.variations ?? []
+      for (const variation of variations) {
+        const varInfos = variation.item_variation_data?.modifier_list_info ?? []
+        varInfos.forEach((info) => {
+          if (info.enabled && info.modifier_list_id) {
+            listIds.add(info.modifier_list_id)
+          }
+        })
+      }
 
-    return {
-      item,
-      modifierLists: resolvedLists,
-    }
-  })
+      const resolvedLists = Array.from(listIds)
+        .map((id) => modifierLists[id])
+        .filter((list): list is SquareModifierList => Boolean(list))
+
+      return {
+        item,
+        modifierLists: resolvedLists,
+      }
+    })
+  } catch (err) {
+    console.log(err)
+  }
+
+  return []
 }
 
 export async function syncMenuItems(merchant: PublicMerchant) {
