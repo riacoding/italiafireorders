@@ -7,14 +7,17 @@ import { fetchMenus } from '@/lib/ssr-actions'
 import { Menu, MenuItem } from '@/types'
 import AdminPage from './AdminPage'
 import { menuSelectionSet } from '@/types'
+import { useMerchant } from '@/components/MerchantContext'
 
 export type MenuSelection = SelectionSet<Schema['Menu']['type'], typeof menuSelectionSet>
 
 export default function Admin() {
   const [menus, setMenus] = useState<MenuSelection[] | null>(null)
+  const merchant = useMerchant()
 
   useEffect(() => {
-    fetchMenus().then(setMenus)
+    if (!merchant?.id) return
+    fetchMenus(merchant.id).then(setMenus)
   }, [])
 
   if (!menus) {

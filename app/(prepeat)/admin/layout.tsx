@@ -1,11 +1,11 @@
 'use client'
 
-import { useSafeAuthenticator } from '@/hooks/useSafeAuthenticator'
-import { getUserBySub, getMerchant } from '@/lib/ssr-actions'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useSafeAuthenticator } from '@/hooks/useSafeAuthenticator'
+import { getUserBySub, getMerchant, getServerMerchant } from '@/lib/ssr-actions'
 import { MerchantProvider } from '@/components/MerchantContext'
-import { PublicMerchant } from '@/types'
+import type { PublicMerchant } from '@/types'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, authStatus } = useSafeAuthenticator()
@@ -13,55 +13,87 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
 
   const [merchant, setMerchant] = useState<PublicMerchant | null>(null)
-  const [checking, setChecking] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   const isOnboardingRoute = pathname.startsWith('/admin/onboarding')
 
+  console.log('AdminLayout INIT', {
+    authStatus,
+    userId: user?.userId,
+    pathname,
+  })
+
   useEffect(() => {
-    async function load() {
-      console.log('loading layout')
+    async function init() {
+      // ⛔️ Not logged in
+      if (authStatus === 'unauthenticated') {
+        router.replace('/login')
+        return
+      }
+
+      if (authStatus === 'authenticated' && !user?.userId) {
+        // Still hydrating user — wait
+        return
+      }
+
+      // ✅ Logged in and user exists
       if (authStatus === 'authenticated' && user?.userId) {
         const userRecord = await getUserBySub(user.userId)
 
+        // 🧹 Cleanup sessionStorage once we’re in DB flow
+        sessionStorage.removeItem('signupStep')
+        sessionStorage.removeItem('signupEmail')
+        sessionStorage.removeItem('signupUserId')
+        sessionStorage.removeItem('signupMerchant')
+
+        // 🚧 No merchant created yet — needs business step
         if (!userRecord?.merchantId) {
           if (!isOnboardingRoute) {
-            router.replace('/signup/onboarding')
-            return
+            router.replace('/admin/onboarding')
           }
-          setChecking(false)
+          setLoading(false)
           return
         }
 
-        const fetchedMerchant = await getMerchant(userRecord.merchantId)
+        // ✅ Has merchantId — fetch merchant
+        const fetchedMerchant = await getServerMerchant(userRecord.merchantId)
         setMerchant(fetchedMerchant)
 
-        // If merchant exists but user is on onboarding, redirect them to /admin
+        const isLinked = !!fetchedMerchant?.accessToken
+
+        // 🚧 Merchant exists but not linked — needs Square link step
+        if (!isLinked) {
+          if (!isOnboardingRoute) {
+            router.replace('/admin/onboarding')
+          }
+          setLoading(false)
+          return
+        }
+
+        // ✅ Fully onboarded but still on onboarding route — redirect to main admin
         if (isOnboardingRoute) {
           router.replace('/admin')
           return
         }
 
-        setChecking(false)
+        // ✅ All good, allow rendering
+        setLoading(false)
       }
     }
 
-    if (authStatus === 'unauthenticated') {
-      router.replace('/login')
-    } else {
-      load()
-    }
+    init()
   }, [authStatus, user?.userId, pathname, isOnboardingRoute, router])
 
-  if (checking || authStatus !== 'authenticated') {
-    return
+  if (loading || authStatus !== 'authenticated' || !user?.userId) {
+    return <div className='p-4'>Loading...</div>
   }
 
-  // If we're still here on onboarding route, they are allowed through without MerchantProvider
-  if (isOnboardingRoute && !merchant) {
+  // 🟡 Onboarding UI (business step or Square link) — merchant may or may not exist
+  if (isOnboardingRoute) {
     return <div className='w-full flex flex-col items-center'>{children}</div>
   }
 
-  // All other admin routes require MerchantProvider
+  // ✅ Admin routes — requires MerchantProvider
   return (
     <MerchantProvider merchant={merchant}>
       <div className='w-full flex flex-col items-center'>{children}</div>

@@ -90,14 +90,18 @@ export async function getSquareClient(
   })
 }
 
-export const fetchMenus = async () => {
+export const fetchMenus = async (merchantId: string) => {
   const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  console.log('fetch Menu', merchantId)
 
   try {
-    const { data, errors } = await cookieBasedClient.models.Menu.list({
-      selectionSet: [...menuSelectionSet],
-      authMode,
-    })
+    const { data, errors } = await cookieBasedClient.models.Menu.listMenuByMerchantId(
+      { merchantId },
+      {
+        selectionSet: [...menuSelectionSet],
+        authMode,
+      }
+    )
 
     if (errors && errors.length > 0) {
       console.error('Error fetching menus:', errors)
