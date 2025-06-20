@@ -31,7 +31,7 @@ export default function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
             <DropdownMenuItem onClick={() => router.push('/admin/settings')}>Settings</DropdownMenuItem>
           </>
         )}
-        {isLoggedIn ? (
+        {authStatus === 'authenticated' ? (
           <DropdownMenuItem onClick={() => handleLogout()}>Logout</DropdownMenuItem>
         ) : (
           <DropdownMenuItem onClick={() => router.push('/login')}>Login</DropdownMenuItem>
