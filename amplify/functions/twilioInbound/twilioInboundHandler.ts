@@ -13,6 +13,8 @@ export type Menu = Schema['Menu']['type']
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   console.log('event:', event)
+  const routed = event.headers?.['x-twilio-routed'] === 'true'
+  console.log('Was routed via TwilioDevRouter?', routed)
   const APP_BASE_URL = process.env.APP_BASE_URL
   const rawBody = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || ''
 
@@ -50,6 +52,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (menu.isActive) {
       reply = `Here’s today’s menu: ${APP_BASE_URL}/menus/${merchant?.handle}/${menu.locationId}`
     }
+
+    console.log('reply:', reply)
   }
 
   return {

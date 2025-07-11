@@ -5,11 +5,12 @@ import { useSignupContext } from './SignupContext'
 import { Button } from '@/components/ui/button'
 import { getAuthUrl } from '@/lib/ssr-actions'
 import Link from 'next/link'
+import { PublicMerchant } from '@/types'
 
-export default function LinkAccount() {
+export default function LinkAccount({ merchant }: { merchant: PublicMerchant }) {
   const [url, setUrl] = useState<string | null>(null)
   const [auth, setAuth] = useState<string | null>(null)
-  const { merchant } = useSignupContext()
+  const [isConfiguring, setIsConfiguring] = useState(true)
 
   useEffect(() => {
     async function getUrl() {
@@ -23,12 +24,13 @@ export default function LinkAccount() {
           document.cookie = `oauth_state=${auth}; Path=/; Secure; SameSite=Lax`
         }
       }
+      setIsConfiguring(false)
     }
     getUrl()
   }, [merchant])
 
   if (!merchant) {
-    return <div className='text-center text-sm text-gray-500'>No merchant found in context.</div>
+    return <div className='text-center text-sm text-gray-500'>No merchant found.</div>
   }
 
   return (
@@ -42,10 +44,10 @@ export default function LinkAccount() {
 
       <div className='text-center'>
         <p className='text-gray-600 mb-4'>To accept payments and manage orders, please link your Square account.</p>
-        <p>{url}</p>
+        <div>{url}</div>
         <Button size='lg' className='w-full bg-prepeat-orange hover:bg-orange-600' disabled={!url} asChild>
           <Link href={url || '#'} aria-disabled={!url}>
-            Link Square
+            {isConfiguring ? 'configuring' : 'Link Square'}
           </Link>
         </Button>
       </div>

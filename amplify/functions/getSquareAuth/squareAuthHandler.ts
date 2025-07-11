@@ -6,7 +6,8 @@ const SQUARE_ENV = process.env.SQUARE_ENV || 'sandbox'
 const SQUARE_APP_ID = process.env.SQUARE_APP_ID!
 
 export const handler = async (event: any) => {
-  console.log('getSquareAuth event', event, process.env.OAUTH_STATE_SECRET, process.env.SQUARE_APP_ID)
+  console.log('getSquareAuth event', event)
+  console.log('env', process.env.OAUTH_STATE_SECRET, process.env.SQUARE_APP_ID)
 
   const merchantId = event.arguments.merchantId as string
 

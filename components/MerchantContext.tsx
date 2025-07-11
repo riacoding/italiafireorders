@@ -1,4 +1,5 @@
 // components/MerchantContext.tsx
+'use client'
 import { Merchant, PublicMerchant } from '@/types'
 import { createContext, useContext } from 'react'
 

@@ -1,4 +1,3 @@
-// app/menu/MenuDisplay.tsx
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -19,38 +18,45 @@ export default function MenuDisplay() {
       <main className='p-4'>
         {!merchantLogo && <h2 className='text-3xl text-center font-bold mb-5'>{menu.name}</h2>}
 
-        <h3 className='text-2xl font-light mb-4'>Our Menu</h3>
+        <h3 className='text-2xl font-light mb-4'>{menu.isOffline ? "We'll be right back!" : 'Our Menu'}</h3>
+
         <div className='flex flex-col gap-2'>
-          {items.map((item) => (
-            <Link key={item.id} href={`${location}/item/${item.id}`}>
-              <Card className='overflow-hidden'>
-                <div className='flex h-24'>
-                  <div className='w-1/4 relative'>
-                    {menu.useImages && item.image && item.image === '/placeholder.svg' ? (
-                      <Image src={item.image} alt={item.name} fill className='object-cover rounded border' />
-                    ) : (
-                      <StorageImage
-                        className='w-full h-full object-cover rounded border'
-                        path={`items/${item.catalogItemId}.jpg`}
-                        alt='food thumnail'
-                      />
-                    )}
-                  </div>
-                  <CardContent className='w-2/3 p-3 flex justify-between items-center'>
-                    <div>
-                      <h3 className='font-medium'>{item.customName ? item.customName : item.name}</h3>
-                      <p className='text-sm text-muted-foreground line-clamp-1'>{item.description}</p>
-                      <p className='font-bold mt-1'>
-                        <CurrencyDisplay value={item.price} />
-                      </p>
-                      <p>{item.isFeatured ? 'featured' : ''}</p>
+          {menu.isOffline ? (
+            <div>
+              <img src='/intheweeds.png' alt='offline image' />
+            </div>
+          ) : (
+            items.map((item) => (
+              <Link key={item.id} href={`${location}/item/${item.id}`}>
+                <Card className='overflow-hidden'>
+                  <div className='flex h-24'>
+                    <div className='w-1/4 relative'>
+                      {menu.useImages && item.image && item.image === '/placeholder.svg' ? (
+                        <Image src={item.image} alt={item.name} fill className='object-cover rounded border' />
+                      ) : (
+                        <StorageImage
+                          className='w-full h-full object-cover rounded border'
+                          path={`items/${item.catalogItemId}.jpeg`}
+                          alt='food thumbnail'
+                        />
+                      )}
                     </div>
-                    <ChevronRight className='h-5 w-5 text-muted-foreground' />
-                  </CardContent>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                    <CardContent className='w-2/3 p-3 flex justify-between items-center'>
+                      <div>
+                        <h3 className='font-medium'>{item.customName || item.name}</h3>
+                        <p className='text-sm text-muted-foreground line-clamp-1'>{item.description}</p>
+                        <p className='font-bold mt-1'>
+                          <CurrencyDisplay value={item.price} />
+                        </p>
+                        {item.isFeatured && <p className='text-sm text-yellow-600 font-semibold'>Featured</p>}
+                      </div>
+                      <ChevronRight className='h-5 w-5 text-muted-foreground' />
+                    </CardContent>
+                  </div>
+                </Card>
+              </Link>
+            ))
+          )}
         </div>
       </main>
     </div>

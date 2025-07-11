@@ -27,10 +27,13 @@ export default function ThankYouClient() {
 
   const [isLoading, setIsLoading] = useState(true)
   const orderAccess = searchParams.get('order') || 'none-none'
+  const isDemo = searchParams.get('isDemo')
   const [locationId, date, orderNumber] = orderAccess.split('-')
   const { clearCart } = useCart()
 
-  useOrderUpdateSubscription(order?.id, (status) => {
+  console.log('isDemo', '456', isDemo)
+
+  useOrderUpdateSubscription(order?.id, Boolean(isDemo), (status) => {
     setOrderStatus(status)
   })
 
@@ -41,8 +44,9 @@ export default function ThankYouClient() {
   useEffect(() => {
     async function fetchOrder() {
       const orderToken = localStorage.getItem(orderAccess)
+      console.log('orderToken:', '123', orderToken)
       if (orderToken) {
-        const res = await getSquareOrderByOrderNumber(orderAccess, orderToken)
+        const res = await getSquareOrderByOrderNumber(orderAccess, orderToken, Boolean(isDemo))
         setOrder(res)
         localStorage.removeItem(orderAccess)
       }
@@ -84,7 +88,7 @@ export default function ThankYouClient() {
         <div className='w-full border-4 border-black rounded-md p-8 text-center bg-white shadow-md'>
           <h1 className='text-3xl font-bold mb-4'>Thank you</h1>
 
-          <p className='text-lg'>Your order number is:</p>
+          <p className='text-lg'>Your {isDemo ? 'Demo' : ''} order number is:</p>
           <p className='text-3xl font-semibold mt-2 min-h-[2.5rem] break-words'>{orderNumber || '\u00A0'}</p>
 
           <div className='mt-4 min-h-[8rem]'>

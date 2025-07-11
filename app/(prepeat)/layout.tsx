@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import '@/app/globals.css'
-import CartIcon from '@/components/CartIcon'
-import Image from 'next/image'
 import Link from 'next/link'
 import MobileMenu from '@/components/MobileMenu'
 import HeaderLogo from '@/components/HeaderLogo'

@@ -24,12 +24,10 @@ export default async function RootLayout({
   const year = new Date().getFullYear()
 
   return (
-    <SignupProvider>
-      <html lang='en'>
-        <body className='min-h-screen flex flex-col'>
-          {children} <Toaster />{' '}
-        </body>
-      </html>
-    </SignupProvider>
+    <html lang='en'>
+      <body className='min-h-screen flex flex-col'>
+        {children} <Toaster />{' '}
+      </body>
+    </html>
   )
 }

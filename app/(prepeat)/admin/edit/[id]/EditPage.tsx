@@ -32,6 +32,7 @@ type FormValues = {
   logo?: string
   theme?: string // JSON string
   isActive: boolean
+  isOffline: boolean
 }
 
 interface EditPageParams {
@@ -145,6 +146,7 @@ export default function EditPage({ id }: EditPageParams) {
       logo: data.logo || '',
       theme: parsedTheme,
       isActive: data.isActive,
+      isOffline: data.isOffline,
     })
 
     if (!savedMenu.id) {
@@ -208,6 +210,15 @@ export default function EditPage({ id }: EditPageParams) {
             id='isActive'
             checked={watch('isActive')}
             onCheckedChange={(value) => setValue('isActive', value)}
+          />
+        </div>
+        <div className='flex items-center space-x-4'>
+          <Label htmlFor='isActive'>In The Weeds</Label>
+          <Switch
+            className='data-[state=checked]:bg-green-600 bg-gray-300'
+            id='isOffline'
+            checked={watch('isOffline')}
+            onCheckedChange={(value) => setValue('isOffline', value)}
           />
         </div>
 

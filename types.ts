@@ -9,6 +9,9 @@ export type CatalogItem = Schema['CatalogItem']['type']
 export type Merchant = Schema['Merchant']['type']
 export type UpdateMerchantInput = Schema['Merchant']['updateType']
 export type SafeMenuItem = RemoveFunctions<Schema['MenuItem']['type']>
+export type User = Schema['User']['type']
+
+export type SortOption = 'Newest' | 'Oldest'
 
 export type MenuInput = {
   id?: string
@@ -19,6 +22,7 @@ export type MenuInput = {
   logo?: string
   theme?: object | null
   isActive: boolean
+  isOffline: boolean
 }
 
 export const merchantSelectionSet = ['handle', 'id', 'locationIds', 's3ItemKey', 'businessName', 'isLinked'] as const
@@ -299,4 +303,13 @@ export type HydratedCatalog = {
 export type SquareAuthResponse = {
   url: string | null
   auth: string | null
+}
+
+export type DemoOrderInput = {
+  referenceId: string
+  orderId: string
+  merchantId: string
+  locationId: string
+  lineItems: CartItem[]
+  orderToken: string
 }

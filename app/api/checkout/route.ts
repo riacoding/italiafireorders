@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
 
     const displayTicketNumber: string = ticket?.ticketNumber?.slice(-12) || ''
 
+    if (menuSlug === 'demo') {
+      return NextResponse.json({ url: 'demo', ticketNumber: ticket?.ticketNumber })
+    }
+
     const lineItems = cartItems.map((item: any) => ({
       catalogObjectId: item.catalogVariationId,
       quantity: item.quantity.toString(),

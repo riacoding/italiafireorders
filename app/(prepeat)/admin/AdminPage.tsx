@@ -29,7 +29,7 @@ export default function AdminPage({ menus }: AdminPageProps) {
         variant: 'destructive',
       })
 
-      setTimeout(() => router.push('/admin/link'), 1500)
+      setTimeout(() => router.push('/admin/onboarding'), 1500)
     }
   }, [merchant])
 

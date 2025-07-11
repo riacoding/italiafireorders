@@ -33,6 +33,12 @@ const backend = defineBackend({
 })
 const environment = process.env.ENVIRONMENT ?? 'dev'
 const ordersTable = backend.data.resources.tables['Order']
+const { cfnResources } = backend.data.resources
+
+cfnResources.amplifyDynamoDbTables['DemoOrder'].timeToLiveAttribute = {
+  attributeName: 'expiresAt',
+  enabled: true,
+}
 
 const APP_BASE_URL =
   currentBranch === 'prepeat-dev'

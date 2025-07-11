@@ -28,6 +28,7 @@
 
 'use server'
 import { secret } from '@aws-amplify/backend'
+import { getCurrentUser } from '@aws-amplify/auth'
 import { cookieBasedClient, getCurrentUserServer } from '@/util/amplify'
 import { Schema } from '@/amplify/data/resource'
 import {
@@ -56,11 +57,13 @@ import {
   MerchantSelected,
   PublicMerchant,
   OrderReceipt,
+  DemoOrderInput,
 } from '@/types'
 import { extractReceiptItems, orderNumberToTicket } from './utils'
 import { SquareClient, SquareEnvironment } from 'square'
 import { randomUUID } from 'crypto'
 import { sanitizeBigInts } from '@/amplify/functions/webhookProcessor/util'
+import { mockSquareOrderFromCart } from './mockSquareOrderFromCart'
 
 const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2'
 const SQUARE_TOKEN = process.env.SQUARE_ACCESS_TOKEN
@@ -165,6 +168,37 @@ export async function updateSquareOrder(
   merchantId: string
 ) {
   console.log(`Updating order ${orderId} at Location:${locationId} to ${newState.state}`)
+
+  // 🛑 Detect and handle demo orders
+  if (orderId.startsWith('demo-')) {
+    console.log(`[updateSquareOrder] Skipping Square update — demo order ${orderId}`)
+
+    // Fetch the Amplify order by ID
+    const amplifyOrder = await getAmplifyDemoOrderById(orderId)
+
+    if (!amplifyOrder?.rawData) {
+      console.warn(`[updateSquareOrder] Demo order ${orderId} missing rawData`)
+      return
+    }
+
+    // Parse rawData if stored as a string (DynamoDB edge case)
+    const rawData: SquareOrder =
+      typeof amplifyOrder.rawData === 'string' ? JSON.parse(amplifyOrder.rawData) : amplifyOrder.rawData
+
+    // Safely clone and update fulfillments
+    const updatedRawData: SquareOrder = {
+      ...rawData,
+      fulfillments: (rawData.fulfillments || []).map((f) => ({
+        ...f,
+        state: newState.state,
+      })),
+    }
+
+    // Write it back into Amplify
+    await updateAmplifyDemoOrder(updatedRawData, newState)
+    return
+  }
+
   const merchant = await getServerMerchant(merchantId)
   if (!merchant) return
   const client = await getSquareClient(merchant.accessToken)
@@ -252,6 +286,28 @@ export async function updateOrderContact(phone: string, ticketNumber: string): P
   }
 }
 
+export async function updateAmplifyDemoOrder(order: SquareOrder, newState: FulfillmentState): Promise<void> {
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
+  try {
+    const { data, errors } = await cookieBasedClient.models.DemoOrder.update(
+      {
+        id: order.id,
+        fulfillmentStatus: newState.state,
+        rawData: JSON.stringify(sanitizeBigInts(order)),
+      },
+      { authMode }
+    )
+
+    if (errors) {
+      console.error('Amplify update errors:', errors)
+    } else {
+      console.log(`Amplify order ${order.id} updated to ${newState.state}`)
+    }
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 export async function updateAmplifyOrder(order: SquareOrder, newState: FulfillmentState): Promise<void> {
   try {
     const { data, errors } = await cookieBasedClient.models.Order.update({
@@ -327,21 +383,21 @@ export async function getSquareItems(ids: string[]): Promise<SquareItem[]> {
 
 export async function getSquareOrderByOrderNumber(
   orderNumber: string,
-  orderToken: string
+  orderToken: string,
+  isDemo?: boolean
 ): Promise<OrderReceipt | null> {
   const token = process.env.SQUARE_ACCESS_TOKEN || 'noToken'
   const locationId = process.env.SQUARE_LOCATION_ID || 'noLocation'
 
   const referenceId = orderNumber
 
-  const authMode = (await isAuth()) ? 'userPool' : 'iam'
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
 
   try {
-    console.log('fetching order:', referenceId)
-    const { data, errors } = await cookieBasedClient.models.Order.listOrderByReferenceId(
-      { referenceId: referenceId },
-      { authMode }
-    )
+    console.log('fetching order:', referenceId, isDemo, authMode)
+    const { data, errors } = isDemo
+      ? await cookieBasedClient.models.DemoOrder.listDemoOrderByReferenceId({ referenceId: referenceId }, { authMode })
+      : await cookieBasedClient.models.Order.listOrderByReferenceId({ referenceId: referenceId }, { authMode })
 
     if (errors && errors?.length > 0) {
       console.error('Error fetching order:', errors)
@@ -601,7 +657,7 @@ export async function fetchMenuItemsWithModifiers(squareItemIds: string[]): Prom
 
   const filtered = allItems.filter((item) => squareItemIds.includes(item.squareItemId))
 
-  console.log('Filtered', filtered)
+  //console.log('Filtered', filtered)
 
   // Hydrate and return in expected format
   const hydrated: ItemWithModifiers[] = filtered.map((ci) => {
@@ -945,8 +1001,77 @@ export async function updateMerchant(updateMerchantInput: UpdateMerchantInput) {
   return data
 }
 
+export async function createDemoOrder(order: DemoOrderInput) {
+  console.log('creating demo order', order)
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
+  const mockContext = {
+    ticketNumber: order.referenceId,
+    referenceId: order.referenceId,
+    locationId: order.locationId,
+    menuSlug: 'demo',
+    timeZone: 'America/Los_Angeles',
+    email: 'test@test.com',
+    phone: '+15555555555',
+    orderToken: order.orderToken,
+  }
+
+  const rawData = mockSquareOrderFromCart(order.lineItems, mockContext)
+
+  const { data, errors } = await cookieBasedClient.models.DemoOrder.create(
+    {
+      id: rawData.id,
+      fulfillmentStatus: 'PROPOSED',
+      locationId: order.locationId,
+      merchantId: order.merchantId,
+      referenceId: order.referenceId,
+      rawData: JSON.stringify(rawData),
+      status: 'OPEN',
+      totalMoney: 0,
+    },
+    { authMode }
+  )
+
+  if (errors?.length) {
+    console.error('Error creating demo order:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+
+  return data
+}
+
 function getModifierListsForItem(item: SquareItem, all: Record<string, SquareModifierList>): SquareModifierList[] {
   const variation = item.item_data.variations?.[0]
   const info = variation?.item_variation_data?.modifier_list_info || []
   return info.map((entry) => all[entry.modifier_list_id]).filter((list): list is SquareModifierList => Boolean(list))
+}
+
+async function getAmplifyDemoOrderById(orderId: string) {
+  const authMode = (await isAuth()) ? 'userPool' : 'identityPool'
+
+  const { data, errors } = await cookieBasedClient.models.DemoOrder.get(
+    {
+      id: orderId,
+    },
+    { authMode }
+  )
+
+  if (errors?.length) {
+    console.error('Error fetching demo order:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+
+  return data
+}
+
+async function getAmplifyOrderById(orderId: string) {
+  const { data, errors } = await cookieBasedClient.models.Order.get({
+    id: orderId,
+  })
+
+  if (errors?.length) {
+    console.error('Error fetching demo order:', errors)
+    throw new Error(errors.map((e: any) => e.message).join(', '))
+  }
+
+  return data
 }

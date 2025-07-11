@@ -20,9 +20,11 @@ const schema = a
         email: a.string().required(),
         merchantId: a.id().required(),
         owner: a.string().required(),
+        firstname: a.string(),
+        lastname: a.string(),
       })
       .secondaryIndexes((index) => [index('sub')])
-      .authorization((allow) => [allow.owner(), allow.groups(['admin'])]),
+      .authorization((allow) => [allow.owner(), allow.groups(['admin', 'vendor'])]),
 
     Merchant: a
       .model({
@@ -44,6 +46,23 @@ const schema = a
         allow.guest().to(['read']),
         allow.authenticated().to(['create', 'read']),
         allow.groups(['admin']),
+      ]),
+    DemoOrder: a
+      .model({
+        merchantId: a.id().required(),
+        referenceId: a.string(),
+        orderId: a.string(),
+        locationId: a.string().required(),
+        status: a.string(), // "OPEN", "COMPLETED", etc.
+        totalMoney: a.integer(),
+        fulfillmentStatus: a.string(),
+        rawData: a.json(),
+      })
+      .secondaryIndexes((index) => [index('referenceId'), index('merchantId')])
+      .authorization((allow) => [
+        allow.guest().to(['read', 'create', 'update']),
+        allow.authenticated().to(['read', 'create', 'update']),
+        allow.groups(['admin', 'vendor']).to(['read', 'create', 'update']),
       ]),
     Order: a
       .model({
@@ -92,9 +111,8 @@ const schema = a
         clientUpdated: a.boolean().default(false).required(),
         expiresAt: a.integer(), // TTL field
       })
-      .secondaryIndexes((index) => [index('ticketNumber')])
+      .secondaryIndexes((index) => [index('ticketNumber'), index('phone')])
       .authorization((allow) => [allow.groups(['admin']), allow.guest(), allow.authenticated()]),
-
     Menu: a
       .model({
         id: a.id().required(),
@@ -104,6 +122,7 @@ const schema = a
         locationId: a.string().required(),
         logo: a.string(),
         isActive: a.boolean().default(false),
+        isOffline: a.boolean().default(false),
         theme: a.json(),
         useImages: a.boolean().default(true),
         menuItems: a.hasMany('MenuItem', 'menuId'), // 🆕 one-to-many
@@ -133,7 +152,34 @@ const schema = a
         itemToppings: a.hasMany('ItemTopping', 'toppingId'),
       })
       .authorization((allow) => [allow.owner(), allow.groups(['admin']), allow.guest().to(['read'])]),
-
+    ChecklistTemplate: a
+      .model({
+        merchantId: a.id(),
+        title: a.string(),
+        items: a.hasMany('TemplateItem', 'templateId'), // 👈 add this
+      })
+      .authorization((allow) => [allow.owner(), allow.groups(['admin'])]),
+    TemplateItem: a
+      .model({
+        templateId: a.id().required(),
+        template: a.belongsTo('ChecklistTemplate', 'templateId'),
+        label: a.string().required(),
+        sortOrder: a.integer(),
+        isRequired: a.boolean().default(false),
+      })
+      .authorization((allow) => [allow.owner(), allow.groups(['admin'])]),
+    ChecklistEntry: a
+      .model({
+        merchantId: a.id(),
+        templateId: a.id(),
+        date: a.date().required(), // "2025-07-08"
+        checkedItemIds: a.string().array(), // or raw strings, up to you
+        checkedByUserId: a.id(),
+        checkedByName: a.string(),
+        createdAt: a.datetime().required(),
+      })
+      .secondaryIndexes((index) => [index('merchantId'), index('date')])
+      .authorization((allow) => [allow.groups(['vendor', 'admin']), allow.owner()]),
     ItemTopping: a
       .model({
         id: a.id().required(),

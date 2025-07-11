@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react'
 import { Hub } from 'aws-amplify/utils'
 import { getCurrentUser } from 'aws-amplify/auth'
+import { User } from '@/types'
+import { getUserBySub } from '@/lib/ssr-actions'
 
 export function useSafeAuthenticator() {
   const [authStatus, setAuthStatus] = useState<'unauthenticated' | 'authenticated' | 'configuring'>('configuring')
   const [user, setUser] = useState<any>(null)
+  const [prepEatUser, setPrepEatUser] = useState<User | null>(null)
 
   useEffect(() => {
     let unsubscribe: () => void
@@ -16,6 +19,8 @@ export function useSafeAuthenticator() {
         const currentUser = await getCurrentUser()
         setUser(currentUser)
         setAuthStatus('authenticated')
+        const user = await getUserBySub(currentUser.userId)
+        setPrepEatUser(user)
       } catch {
         setUser(null)
         setAuthStatus('unauthenticated')
@@ -39,5 +44,5 @@ export function useSafeAuthenticator() {
     }
   }, [])
 
-  return { user, authStatus } as const
+  return { user, prepEatUser, authStatus } as const
 }

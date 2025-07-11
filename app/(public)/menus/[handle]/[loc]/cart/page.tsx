@@ -15,6 +15,7 @@ import { CartItem } from '@/types'
 import { usePublicMerchant } from '@/components/MerchantPublicContext'
 import { useMenu } from '../MenuProvider'
 import { safeUUID } from '@/lib/utils'
+import { createDemoOrder } from '@/lib/ssr-actions'
 
 const timeZone = 'America/Los_Angeles'
 
@@ -25,7 +26,7 @@ export default function CartPage() {
   const { items: cartItems, removeItem, clearCart, menuSlug } = useCart()
   const [backLink, setBackLink] = useState('')
 
-  console.log('menupage cart items', cartItems)
+  console.log('Cart Page cart items', cartItems, menuSlug)
   const router = useRouter()
   const { merchant } = usePublicMerchant()
   const { menu } = useMenu()
@@ -92,9 +93,20 @@ export default function CartPage() {
       console.error('LocalStorage failed:', err)
     }
 
-    // 🚀 Do *not* use `setCheckoutLink` here
-    if (data.url) {
-      setTimeout(() => router.push(data.url), 500) // direct + safe
+    if (data.url === 'demo') {
+      // 🟢 Demo mode — simulate webhook by calling createDemoOrder
+      await createDemoOrder({
+        referenceId: `${data.ticketNumber}`,
+        orderId: `demo-${crypto.randomUUID()}`,
+        merchantId: 'ML0JA246HP662',
+        locationId: locationId!,
+        lineItems: cartItems,
+        orderToken,
+      }),
+        router.push(`${process.env.NEXT_PUBLIC_BASE_URL}${backLink}/thankyou?order=${data.ticketNumber}&isDemo=true`)
+    } else if (data.url) {
+      // 🟦 Real checkout — go to Square
+      setTimeout(() => router.push(data.url), 500)
     } else {
       console.error('Failed to create checkout link')
     }
