@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import { env } from '$amplify/env/squareAuthHandler'
 
 const SQUARE_ENV = process.env.SQUARE_ENV || 'sandbox'
-const SQUARE_APP_ID = process.env.SQUARE_APP_ID!
+const SQUARE_APPLICATION_ID = process.env.SQUARE_APPLICATION_ID!
 
 export const handler = async (event: any) => {
   console.log('getSquareAuth event', event)
@@ -44,7 +44,7 @@ export const handler = async (event: any) => {
 
   const url =
     `${basePath}/oauth2/authorize` +
-    `?client_id=${SQUARE_APP_ID}` +
+    `?client_id=${SQUARE_APPLICATION_ID}` +
     `&response_type=code` +
     `&scope=${scopes.join('+')}` +
     `&state=${state}` +
