@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { getCurrentUserServer } from '@/util/amplify'
 
 export default async function DemoLayout({ children }: { children: ReactNode }) {
-  const merchantId = process.env.DEMO_MERCHANT_ID!
+  const merchantId = process.env.NEXT_PUBLIC_DEMO_MERCHANT_ID!
   console.log('merchantId', merchantId)
   const merchant = (await getServerMerchant(merchantId)) || null
 
