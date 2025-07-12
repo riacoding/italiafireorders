@@ -63,7 +63,7 @@ export default function NewChecklistPage() {
         )
       )
 
-      router.push('/checklists')
+      router.push('/admin/checklists')
     } catch (err) {
       console.error('Checklist creation failed:', err)
       alert('Something went wrong')
