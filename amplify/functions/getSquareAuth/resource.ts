@@ -5,7 +5,7 @@ export const squareAuth = defineFunction({
   resourceGroupName: 'data',
   environment: {
     SQUARE_ENV: 'sandbox',
-    SQUARE_APP_ID: secret('SQUARE_APPLICATION_ID'),
+    SQUARE_APPLICATION_ID: secret('SQUARE_APPLICATION_ID'),
     OAUTH_STATE_SECRET: secret('OAUTH_STATE_SECRET'),
   },
 })

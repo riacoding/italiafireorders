@@ -4,7 +4,7 @@ import { cookieBasedClient } from '@/util/amplify'
 import jwt from 'jsonwebtoken'
 
 const env = process.env
-console.log('SQUARE_APP_ID', env.SQUARE_APPLICATION_ID)
+console.log('SQUARE_APPLICATION_ID', env.SQUARE_APPLICATION_ID)
 console.log('SQUARE_SECRET', env.SQUARE_CLIENT_SECRET ? '✅ loaded' : '❌ MISSING')
 
 export async function GET(req: NextRequest) {
